@@ -144,9 +144,9 @@ t=0s     Setup: 建立 N 間教室
          ├── Room 1 ──────────────────────────────────────────────────────►
          │   t=0s: Teacher 建立 Lesson → 啟動 Lesson → 連線 WebSocket
          │   t=30s: Students 開始連線 → 選座位 → 加入課程
-         │   t=45s: Teacher 建立 Quiz
-         │   t=46-90s: Students 收到 Quiz → 提交答案
-         │   t=125s: Teacher 結束 Quiz → 公開 Quiz → 關閉 Quiz → 結束課程
+         │   t=75s: Teacher 建立 Quiz
+         │   t=76-150s: Students 收到 Quiz → 提交答案
+         │   t=155s: Teacher 結束 Quiz → 公開 Quiz → 關閉 Quiz → 結束課程
          │
          ├── Room 2 ──────────────────────────────────────────────────────►
          │   (同上，並行執行)

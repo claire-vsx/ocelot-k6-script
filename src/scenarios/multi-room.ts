@@ -260,7 +260,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
     let namespaceConnected = false;
 
     // 時間配置
-    const quizCreateDelay = (CONFIG.TEACHER_DELAY + 15) * 1000;  // 45s 後創建測驗
+    const quizCreateDelay = (CONFIG.TEACHER_DELAY + 45) * 1000;  // 75s 後創建測驗（等待學生選座完成）
     const answerWaitTime = Math.max(CONFIG.STUDENT_SESSION_TIME - 10, 30) * 1000;  // 作答等待時間
 
     ws.connect(wsUrl, {}, socket => {
