@@ -1,0 +1,42 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: k6-prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - k6-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: k6-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning
+      - ./k6-prometheus-dashboard.json:/var/lib/grafana/dashboards/k6-dashboard.json
+    depends_on:
+      - prometheus
+    networks:
+      - k6-network
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  k6-network:
+    driver: bridge

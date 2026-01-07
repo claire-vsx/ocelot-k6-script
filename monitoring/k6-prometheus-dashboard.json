@@ -1,0 +1,353 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 80 }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "Students Connected",
+      "type": "stat",
+      "targets": [{ "expr": "max(k6_ws_join_lesson_sent_total)", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "Students Seated",
+      "type": "stat",
+      "targets": [{ "expr": "max(k6_ws_seat_chosen_total)", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "Answers Submitted",
+      "type": "stat",
+      "targets": [{ "expr": "max(k6_http_success_submit_answers_total)", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "Events Received",
+      "type": "stat",
+      "targets": [{ "expr": "max(k6_ws_event_quiz_created_total)", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0 }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "Errors",
+      "type": "stat",
+      "targets": [{ "expr": "max(k6_errors_total) or vector(0)", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "HTTP Requests",
+      "type": "stat",
+      "targets": [{ "expr": "max(k6_http_reqs_total)", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "title": "WebSocket Events",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 6 },
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "title": "Socket Events Summary",
+      "type": "bargauge",
+      "targets": [
+        { "expr": "max(k6_ws_connected_total)", "legendFormat": "ws_connected", "refId": "A" },
+        { "expr": "max(k6_ws_namespace_connected_total)", "legendFormat": "namespace_connected", "refId": "B" },
+        { "expr": "max(k6_ws_seat_chosen_total)", "legendFormat": "seat_chosen", "refId": "C" },
+        { "expr": "max(k6_ws_join_lesson_sent_total)", "legendFormat": "join_lesson", "refId": "D" },
+        { "expr": "max(k6_ws_teacher_join_lesson_sent_total)", "legendFormat": "teacher_join", "refId": "E" },
+        { "expr": "max(k6_ws_event_quiz_created_total)", "legendFormat": "quiz_created", "refId": "F" },
+        { "expr": "max(k6_ws_event_quiz_finished_total)", "legendFormat": "quiz_finished", "refId": "G" },
+        { "expr": "max(k6_ws_event_quiz_disclosed_total)", "legendFormat": "quiz_disclosed", "refId": "H" },
+        { "expr": "max(k6_ws_event_quiz_closed_total)", "legendFormat": "quiz_closed", "refId": "I" },
+        { "expr": "max(k6_ws_event_end_lesson_total)", "legendFormat": "end_lesson", "refId": "K" },
+        { "expr": "max(k6_ws_disconnected_total)", "legendFormat": "ws_disconnected", "refId": "J" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "Socket Events Over Time",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "k6_ws_connected_total", "legendFormat": "ws_connected", "refId": "A" },
+        { "expr": "k6_ws_namespace_connected_total", "legendFormat": "namespace_connected", "refId": "B" },
+        { "expr": "k6_ws_seat_chosen_total", "legendFormat": "seat_chosen", "refId": "C" },
+        { "expr": "k6_ws_join_lesson_sent_total", "legendFormat": "join_lesson", "refId": "D" },
+        { "expr": "k6_ws_teacher_join_lesson_sent_total", "legendFormat": "teacher_join", "refId": "E" },
+        { "expr": "k6_ws_event_quiz_created_total", "legendFormat": "quiz_created", "refId": "F" },
+        { "expr": "k6_ws_event_quiz_finished_total", "legendFormat": "quiz_finished", "refId": "G" },
+        { "expr": "k6_ws_event_quiz_disclosed_total", "legendFormat": "quiz_disclosed", "refId": "H" },
+        { "expr": "k6_ws_event_quiz_closed_total", "legendFormat": "quiz_closed", "refId": "I" },
+        { "expr": "k6_ws_event_end_lesson_total", "legendFormat": "end_lesson", "refId": "K" },
+        { "expr": "k6_ws_disconnected_total", "legendFormat": "ws_disconnected", "refId": "J" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "title": "HTTP Performance",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "HTTP Request Duration (by API)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"create_room\"}))*1000", "legendFormat": "create_room p99", "refId": "A" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"create_lesson\"}))*1000", "legendFormat": "create_lesson p99", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"start_lesson\"}))*1000", "legendFormat": "start_lesson p99", "refId": "C" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"end_lesson\"}))*1000", "legendFormat": "end_lesson p99", "refId": "D" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"choose_seat\"}))*1000", "legendFormat": "choose_seat p99", "refId": "E" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"create_quizzes\"}))*1000", "legendFormat": "create_quizzes p99", "refId": "F" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"fetch_quiz\"}))*1000", "legendFormat": "fetch_quiz p99", "refId": "G" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"submit_answers\"}))*1000", "legendFormat": "submit_answers p99", "refId": "H" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"finish_quiz\"}))*1000", "legendFormat": "finish_quiz p99", "refId": "I" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"close_quiz\"}))*1000", "legendFormat": "close_quiz p99", "refId": "J" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"disclose_quiz\"}))*1000", "legendFormat": "disclose_quiz p99", "refId": "K" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"add_points\"}))*1000", "legendFormat": "add_points p99", "refId": "L" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "reqps" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "HTTP Requests Rate (req/s)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(k6_http_reqs_total[30s]))", "legendFormat": "total_requests/s", "refId": "A" },
+        { "expr": "sum(rate(k6_http_req_failed_total[30s]))", "legendFormat": "failed_requests/s", "refId": "B" },
+        { "expr": "rate(k6_http_reqs_total{name=\"create_room\"}[30s])", "legendFormat": "create_room/s", "refId": "C" },
+        { "expr": "rate(k6_http_reqs_total{name=\"create_lesson\"}[30s])", "legendFormat": "create_lesson/s", "refId": "D" },
+        { "expr": "rate(k6_http_reqs_total{name=\"start_lesson\"}[30s])", "legendFormat": "start_lesson/s", "refId": "E" },
+        { "expr": "rate(k6_http_reqs_total{name=\"end_lesson\"}[30s])", "legendFormat": "end_lesson/s", "refId": "F" },
+        { "expr": "rate(k6_http_reqs_total{name=\"choose_seat\"}[30s])", "legendFormat": "choose_seat/s", "refId": "G" },
+        { "expr": "rate(k6_http_reqs_total{name=\"create_quizzes\"}[30s])", "legendFormat": "create_quizzes/s", "refId": "H" },
+        { "expr": "rate(k6_http_reqs_total{name=\"fetch_quiz\"}[30s])", "legendFormat": "fetch_quiz/s", "refId": "I" },
+        { "expr": "rate(k6_http_reqs_total{name=\"submit_answers\"}[30s])", "legendFormat": "submit_answers/s", "refId": "J" },
+        { "expr": "rate(k6_http_reqs_total{name=\"finish_quiz\"}[30s])", "legendFormat": "finish_quiz/s", "refId": "K" },
+        { "expr": "rate(k6_http_reqs_total{name=\"close_quiz\"}[30s])", "legendFormat": "close_quiz/s", "refId": "L" },
+        { "expr": "rate(k6_http_reqs_total{name=\"disclose_quiz\"}[30s])", "legendFormat": "disclose_quiz/s", "refId": "M" },
+        { "expr": "rate(k6_http_reqs_total{name=\"add_points\"}[30s])", "legendFormat": "add_points/s", "refId": "N" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
+      "title": "Custom Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "Custom Timing Metrics",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_seat_time))", "legendFormat": "choose_seat p99", "refId": "A" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_submit_time))", "legendFormat": "submit_answers p99", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_quiz_received_time))", "legendFormat": "quiz_received p99", "refId": "C" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_time_to_seat))", "legendFormat": "time_to_seat p99", "refId": "D" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "WebSocket Timing",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_ws_connect_time))", "legendFormat": "ws_connect p99 (ms)", "refId": "A" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_ws_connection_duration))", "legendFormat": "connection_duration p99 (ms)", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (k6_ws_connecting_seconds))*1000", "legendFormat": "ws_connecting p99 (ms)", "refId": "C" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 38 },
+      "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "WebSocket Connection Lifecycle",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "k6_ws_connected_total", "legendFormat": "connected", "refId": "A" },
+        { "expr": "k6_ws_namespace_connected_total", "legendFormat": "namespace_connected", "refId": "B" },
+        { "expr": "k6_ws_seat_chosen_total", "legendFormat": "seat_chosen", "refId": "C" },
+        { "expr": "k6_ws_join_lesson_sent_total", "legendFormat": "join_lesson", "refId": "D" },
+        { "expr": "k6_ws_event_quiz_created_total", "legendFormat": "quiz_created", "refId": "E" },
+        { "expr": "k6_ws_event_quiz_finished_total", "legendFormat": "quiz_finished", "refId": "F" },
+        { "expr": "k6_ws_event_quiz_closed_total", "legendFormat": "quiz_closed", "refId": "G" },
+        { "expr": "k6_ws_event_end_lesson_total", "legendFormat": "end_lesson", "refId": "K" },
+        { "expr": "k6_ws_disconnected_total", "legendFormat": "disconnected", "refId": "H" },
+        { "expr": "k6_ws_unexpected_close_total", "legendFormat": "unexpected_close", "refId": "I" },
+        { "expr": "k6_ws_connection_error_total", "legendFormat": "connection_error", "refId": "J" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
+      "title": "HTTP Success (by API)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 47 },
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "title": "HTTP Success by API",
+      "type": "bargauge",
+      "targets": [
+        { "expr": "max(k6_http_success_create_room_total) or vector(0)", "legendFormat": "create_room", "refId": "A" },
+        { "expr": "max(k6_http_success_create_lesson_total) or vector(0)", "legendFormat": "create_lesson", "refId": "B" },
+        { "expr": "max(k6_http_success_start_lesson_total) or vector(0)", "legendFormat": "start_lesson", "refId": "C" },
+        { "expr": "max(k6_http_success_choose_seat_total) or vector(0)", "legendFormat": "choose_seat", "refId": "D" },
+        { "expr": "max(k6_http_success_fetch_quiz_total) or vector(0)", "legendFormat": "fetch_quiz", "refId": "E" },
+        { "expr": "max(k6_http_success_submit_answers_total) or vector(0)", "legendFormat": "submit_answers", "refId": "F" },
+        { "expr": "max(k6_http_success_create_quizzes_total) or vector(0)", "legendFormat": "create_quizzes", "refId": "G" },
+        { "expr": "max(k6_http_success_finish_quiz_total) or vector(0)", "legendFormat": "finish_quiz", "refId": "H" },
+        { "expr": "max(k6_http_success_disclose_quiz_total) or vector(0)", "legendFormat": "disclose_quiz", "refId": "I" },
+        { "expr": "max(k6_http_success_close_quiz_total) or vector(0)", "legendFormat": "close_quiz", "refId": "J" },
+        { "expr": "max(k6_http_success_end_lesson_total) or vector(0)", "legendFormat": "end_lesson", "refId": "K" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
+      "title": "HTTP Errors",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 54 },
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "title": "HTTP Errors by Status Code",
+      "type": "bargauge",
+      "targets": [
+        { "expr": "max(k6_http_error_400_total) or vector(0)", "legendFormat": "400", "refId": "A" },
+        { "expr": "max(k6_http_error_401_total) or vector(0)", "legendFormat": "401", "refId": "B" },
+        { "expr": "max(k6_http_error_403_total) or vector(0)", "legendFormat": "403", "refId": "C" },
+        { "expr": "max(k6_http_error_404_total) or vector(0)", "legendFormat": "404", "refId": "D" },
+        { "expr": "max(k6_http_error_409_total) or vector(0)", "legendFormat": "409", "refId": "E" },
+        { "expr": "max(k6_http_error_500_total) or vector(0)", "legendFormat": "500", "refId": "F" },
+        { "expr": "max(k6_seat_error_409_total) or vector(0)", "legendFormat": "seat_409", "refId": "G" }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["k6", "prometheus", "load-testing"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Prometheus",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "k6 Load Testing (Prometheus)",
+  "uid": "k6-prometheus",
+  "version": 1
+}

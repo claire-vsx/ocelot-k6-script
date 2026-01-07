@@ -1,0 +1,27 @@
+{
+  "name": "ocelot-k6-script",
+  "version": "1.0.0",
+  "description": "K6 壓力測試腳本 - ClassSwift 教室系統",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build:watch": "vite build --watch",
+    "test:multi-room": "pnpm build && k6 run dist/multi-room.js",
+    "test:single-room": "pnpm build && k6 run dist/single-room.js",
+    "test:multi-room:prometheus": "pnpm build && k6 run --out experimental-prometheus-rw dist/multi-room.js",
+    "test:single-room:prometheus": "pnpm build && k6 run --out experimental-prometheus-rw dist/single-room.js",
+    "monitoring:up": "cd monitoring && docker compose up -d",
+    "monitoring:down": "cd monitoring && docker compose down",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/k6": "^0.54.2",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vite-plugin-externals": "^0.6.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
