@@ -113,19 +113,20 @@ NUM_ROOMS=4 TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-
 
 **環境變數：**
 
-| 變數                   | 必填 | 預設值                | 說明                   |
-| ---------------------- | ---- | --------------------- | ---------------------- |
-| `ROOM_ID`              | ✅   | -                     | 教室 ID                |
-| `TEACHER_TOKEN`        | ✅   | -                     | 老師 JWT Token         |
-| `TEACHER_WS_TOKEN`     | ✅   | -                     | 老師 WebSocket Token   |
-| `ORG_ID`               | ✅   | -                     | 組織 ID                |
-| `NUM_STUDENTS`         | -    | 50                    | 學生數量               |
-| `TEACHER_DELAY`        | -    | 30                    | 老師延遲啟動秒數       |
-| `STUDENT_SESSION_TIME` | -    | 90                    | 學生 Session 持續秒數  |
-| `STUDENT_WAIT_TIME`    | -    | 60                    | 學生等待時間秒數       |
-| `API_URL`              | -    | http://localhost:8000 | API URL                |
-| `SOCKET_URL`           | -    | 同 API_URL            | WebSocket URL          |
-| `COLLECTION_ID`        | -    | -                     | Quiz Collection ID     |
+| 變數                | 必填 | 預設值                | 說明                           |
+| ------------------- | ---- | --------------------- | ------------------------------ |
+| `ROOM_ID`           | ✅   | -                     | 教室 ID                        |
+| `TEACHER_TOKEN`     | ✅   | -                     | 老師 JWT Token                 |
+| `TEACHER_WS_TOKEN`  | ✅   | -                     | 老師 WebSocket Token           |
+| `ORG_ID`            | ✅   | -                     | 組織 ID                        |
+| `NUM_STUDENTS`      | -    | 50                    | 學生數量                       |
+| `TEACHER_DELAY`     | -    | 10                    | 老師延遲啟動秒數               |
+| `STUDENT_WAIT_TIME` | -    | 60                    | 學生等待 Quiz 超時秒數         |
+| `API_URL`           | -    | http://localhost:8000 | API URL                        |
+| `SOCKET_URL`        | -    | 同 API_URL            | WebSocket URL                  |
+| `COLLECTION_ID`     | -    | -                     | Quiz Collection ID             |
+| `DISPLAY_NAME`      | -    | Teacher               | 老師顯示名稱                   |
+| `REGION`            | -    | TW                    | 地區代碼                       |
 
 **執行方式：**
 
@@ -145,7 +146,7 @@ t=0s     Setup: 建立 N 間教室
          │   t=30s: Students 開始連線 → 選座位 → 加入課程
          │   t=45s: Teacher 建立 Quiz
          │   t=46-90s: Students 收到 Quiz → 提交答案
-         │   t=120s: Teacher 結束 Quiz → 公開答案 → 結束課程
+         │   t=125s: Teacher 結束 Quiz → 公開 Quiz → 關閉 Quiz → 結束課程
          │
          ├── Room 2 ──────────────────────────────────────────────────────►
          │   (同上，並行執行)
@@ -166,7 +167,7 @@ t=0s     Setup: 建立 Lesson
          └── Teacher (1 VU) ───────────────────────────────────────────────►
              t=10s: 延遲啟動 → 連線 WebSocket → 加入課程
              t=12s: 建立 Quiz
-             t=40s: 結束 Quiz → 關閉 Quiz → 結束課程
+             t=52s: 結束 Quiz → 公開 Quiz → 關閉 Quiz → 結束課程
 ```
 
 ## 開發指南
