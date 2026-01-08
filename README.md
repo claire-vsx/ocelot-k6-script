@@ -104,7 +104,11 @@ NUM_ROOMS=2 TEACHER_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-room.js
 **執行方式：**
 
 ```bash
+# 直接指定環境變數
 NUM_ROOMS=4 TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-room.js
+
+# 使用 .env.local 輸出到 Prometheus
+source .env.local && k6 run --out experimental-prometheus-rw dist/multi-room.js
 ```
 
 ### Specified-One-Room (指定教室測試)
@@ -131,7 +135,11 @@ NUM_ROOMS=4 TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-
 **執行方式：**
 
 ```bash
+# 直接指定環境變數
 ROOM_ID=xxx TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/specified-one-room.js
+
+# 使用 .env.local 輸出到 Prometheus
+source .env.local && k6 run --out experimental-prometheus-rw dist/specified-one-room.js
 ```
 
 ## 測試流程時間軸
