@@ -1,0 +1,114 @@
+name: K6 Load Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Test scenario"
+        required: true
+        default: "multi-room"
+        type: choice
+        options:
+          - multi-room
+          - specified-one-room
+          - load-test
+      num_rooms:
+        description: "Number of rooms (multi-room/load-test)"
+        required: false
+        default: "2"
+      students_per_room:
+        description: "Students per room"
+        required: false
+        default: "50"
+      room_id:
+        description: "Room ID (specified-one-room only)"
+        required: false
+        default: ""
+      lesson_duration:
+        description: "Lesson duration in minutes (load-test only)"
+        required: false
+        default: "20"
+      quiz_count:
+        description: "Quiz count (load-test only)"
+        required: false
+        default: "4"
+
+jobs:
+  k6-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build TypeScript
+        run: pnpm build
+
+      - name: Install K6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run K6 Test
+        env:
+          # API Settings
+          API_URL: ${{ secrets.API_URL }}
+          SOCKET_URL: ${{ secrets.SOCKET_URL }}
+          # Authentication
+          TEACHER_TOKEN: ${{ secrets.TEACHER_TOKEN }}
+          TEACHER_WS_TOKEN: ${{ secrets.TEACHER_WS_TOKEN }}
+          # Organization
+          ORG_ID: ${{ secrets.ORG_ID }}
+          TEACHER_ID: ${{ secrets.TEACHER_ID }}
+          # Room Settings
+          NUM_ROOMS: ${{ inputs.num_rooms }}
+          STUDENTS_PER_ROOM: ${{ inputs.students_per_room }}
+          ROOM_ID: ${{ inputs.room_id || secrets.ROOM_ID }}
+          NUM_STUDENTS: ${{ inputs.students_per_room }}
+          # Quiz Settings
+          COLLECTION_ID: ${{ secrets.COLLECTION_ID }}
+          # Time Settings
+          TEACHER_DELAY: "30"
+          STUDENT_SESSION_TIME: "90"
+          STUDENT_WAIT_TIME: "60"
+          # Load-Test Settings
+          LESSON_DURATION: ${{ inputs.lesson_duration }}
+          QUIZ_COUNT: ${{ inputs.quiz_count }}
+          QUIZ_INTERVAL: "4"
+          # Other
+          DISPLAY_NAME: "GitHub-Runner"
+          REGION: "TW"
+          # Prometheus Remote Write
+          K6_PROMETHEUS_RW_SERVER_URL: ${{ secrets.K6_PROMETHEUS_RW_SERVER_URL }}
+          K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM: "true"
+        run: |
+          echo "========================================"
+          echo "Running K6 Load Test"
+          echo "========================================"
+          echo "Scenario: ${{ inputs.scenario }}"
+          echo "API_URL: $API_URL"
+          echo "NUM_ROOMS: $NUM_ROOMS"
+          echo "STUDENTS_PER_ROOM: $STUDENTS_PER_ROOM"
+          echo "Prometheus: $K6_PROMETHEUS_RW_SERVER_URL"
+          echo "========================================"
+
+          k6 run \
+            --out experimental-prometheus-rw \
+            dist/${{ inputs.scenario }}.js

@@ -16,7 +16,8 @@ ocelot-k6-script/
 │   │   └── index.ts           # 模組匯出
 │   └── scenarios/              # 測試場景
 │       ├── multi-room.ts           # 多教室壓力測試
-│       └── specified-one-room.ts   # 指定教室測試
+│       ├── specified-one-room.ts   # 指定教室測試
+│       └── load-test.ts       # 長時間負載測試
 ├── monitoring/                 # 監控配置
 │   ├── docker-compose.yml     # Prometheus + Grafana
 │   ├── prometheus.yml         # Prometheus 設定
@@ -85,21 +86,21 @@ NUM_ROOMS=2 TEACHER_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-room.js
 
 **環境變數：**
 
-| 變數                   | 必填 | 預設值                | 說明                   |
-| ---------------------- | ---- | --------------------- | ---------------------- |
-| `NUM_ROOMS`            | ✅   | -                     | 教室數量               |
-| `STUDENTS_PER_ROOM`    | -    | 50                    | 每間教室學生數         |
-| `TEACHER_TOKEN`        | ✅   | -                     | 老師 JWT Token         |
-| `TEACHER_WS_TOKEN`     | ✅   | -                     | 老師 WebSocket Token   |
-| `ORG_ID`               | ✅   | -                     | 組織 ID                |
-| `TEACHER_ID`           | -    | 同 ORG_ID             | 老師 ID                |
-| `API_URL`              | -    | http://localhost:8000 | API URL                |
-| `SOCKET_URL`           | -    | 同 API_URL            | WebSocket URL          |
-| `COLLECTION_ID`        | -    | -                     | Quiz Collection ID     |
-| `DISPLAY_NAME`         | -    | Teacher               | 老師顯示名稱           |
-| `REGION`               | -    | TW                    | 地區代碼               |
-| `TEACHER_DELAY`        | -    | 30                    | 老師延遲啟動秒數       |
-| `STUDENT_SESSION_TIME` | -    | 90                    | 學生 Session 持續秒數  |
+| 變數                   | 必填 | 預設值                | 說明                  |
+| ---------------------- | ---- | --------------------- | --------------------- |
+| `NUM_ROOMS`            | ✅   | -                     | 教室數量              |
+| `STUDENTS_PER_ROOM`    | -    | 50                    | 每間教室學生數        |
+| `TEACHER_TOKEN`        | ✅   | -                     | 老師 JWT Token        |
+| `TEACHER_WS_TOKEN`     | ✅   | -                     | 老師 WebSocket Token  |
+| `ORG_ID`               | ✅   | -                     | 組織 ID               |
+| `TEACHER_ID`           | -    | 同 ORG_ID             | 老師 ID               |
+| `API_URL`              | -    | http://localhost:8000 | API URL               |
+| `SOCKET_URL`           | -    | 同 API_URL            | WebSocket URL         |
+| `COLLECTION_ID`        | -    | -                     | Quiz Collection ID    |
+| `DISPLAY_NAME`         | -    | Teacher               | 老師顯示名稱          |
+| `REGION`               | -    | TW                    | 地區代碼              |
+| `TEACHER_DELAY`        | -    | 30                    | 老師延遲啟動秒數      |
+| `STUDENT_SESSION_TIME` | -    | 90                    | 學生 Session 持續秒數 |
 
 **執行方式：**
 
@@ -119,7 +120,7 @@ source .env.local && k6 run --out experimental-prometheus-rw dist/multi-room.js
 
 | 變數                | 必填 | 預設值                | 說明                           |
 | ------------------- | ---- | --------------------- | ------------------------------ |
-| `ROOM_ID`           | ✅   | -                     | 指定的教室 ID                  |
+| `ROOM_ID`           | ✅   | -                     | 教室 ID                        |
 | `TEACHER_TOKEN`     | ✅   | -                     | 老師 JWT Token                 |
 | `TEACHER_WS_TOKEN`  | ✅   | -                     | 老師 WebSocket Token           |
 | `ORG_ID`            | ✅   | -                     | 組織 ID                        |
@@ -140,6 +141,36 @@ ROOM_ID=xxx TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/specif
 
 # 使用 .env.local 輸出到 Prometheus
 source .env.local && k6 run --out experimental-prometheus-rw dist/specified-one-room.js
+```
+
+### Load-Test (長時間負載測試)
+
+模擬真實課堂情境，課程持續 30-45 分鐘，老師多次發送測驗。適用於長時間穩定性測試。
+
+**環境變數：**
+
+| 變數                | 必填 | 預設值                | 說明                   |
+| ------------------- | ---- | --------------------- | ---------------------- |
+| `NUM_ROOMS`         | ✅   | -                     | 教室數量               |
+| `STUDENTS_PER_ROOM` | -    | 50                    | 每間教室學生數         |
+| `LESSON_DURATION`   | -    | 30                    | 課程時長（分鐘）       |
+| `QUIZ_COUNT`        | -    | 5                     | 測驗次數               |
+| `QUIZ_INTERVAL`     | -    | 5                     | 測驗間隔（分鐘）       |
+| `TEACHER_TOKEN`     | ✅   | -                     | 老師 JWT Token         |
+| `TEACHER_WS_TOKEN`  | ✅   | -                     | 老師 WebSocket Token   |
+| `ORG_ID`            | ✅   | -                     | 組織 ID                |
+| `API_URL`           | -    | http://localhost:8000 | API URL                |
+| `SOCKET_URL`        | -    | 同 API_URL            | WebSocket URL          |
+| `COLLECTION_ID`     | -    | -                     | Quiz Collection ID     |
+
+**執行方式：**
+
+```bash
+# 直接指定環境變數（30 分鐘課程，5 次測驗）
+NUM_ROOMS=2 LESSON_DURATION=30 QUIZ_COUNT=5 TEACHER_TOKEN=xxx ORG_ID=xxx k6 run dist/load-test.js
+
+# 使用 .env.local 輸出到 Prometheus
+source .env.local && k6 run --out experimental-prometheus-rw dist/load-test.js
 ```
 
 ## 測試流程時間軸
@@ -176,6 +207,29 @@ t=0s     Setup: 在指定教室建立 Lesson
              t=10s: 延遲啟動 → 連線 WebSocket → 加入課程
              t=12s: 建立 Quiz
              t=52s: 結束 Quiz → 公開 Quiz → 關閉 Quiz → 結束課程
+```
+
+### Load-Test 流程
+
+```
+t=0s     Setup: 建立 Lesson
+         │
+         ├── Students (50 VUs) ────────────────────────────────────────────────────►
+         │   t=0-3s: 錯開連線 → WebSocket 連線 → 選座位 → 加入課程
+         │   t=2m:   收到 Quiz #1 → 思考 → 提交答案
+         │   t=7m:   收到 Quiz #2 → 思考 → 提交答案
+         │   t=12m:  收到 Quiz #3 → 思考 → 提交答案
+         │   t=17m:  收到 Quiz #4 → 思考 → 提交答案
+         │   t=22m:  收到 Quiz #5 → 思考 → 提交答案
+         │   t=30m:  收到課程結束事件 → 斷線
+         │
+         └── Teacher (1 VU) ───────────────────────────────────────────────────────►
+             t=10s:   延遲啟動 → 連線 WebSocket → 加入課程
+             t=2m:    建立 Quiz #1
+             t=6m30s: 結束 Quiz #1 → 公開 → 關閉
+             t=7m:    建立 Quiz #2
+             ...      (重複直到所有測驗完成)
+             t=30m:   結束課程
 ```
 
 ## 開發指南
@@ -255,73 +309,131 @@ histogram_quantile(0.95, sum by (le) (k6_seat_time))
 pnpm monitoring:down
 ```
 
+## GitHub Actions CI/CD
+
+支援透過 GitHub Actions 手動觸發測試，結果輸出到 Prometheus。
+
+### 使用方式
+
+1. 到 GitHub repo → **Actions** → **K6 Load Test**
+2. 點擊 **Run workflow**
+3. 選擇參數：
+   - `scenario`: multi-room / specified-one-room / load-test
+   - `num_rooms`: 教室數量
+   - `students_per_room`: 每間教室學生數
+   - `lesson_duration`: 課程時長（load-test）
+   - `quiz_count`: 測驗次數（load-test）
+
+### GitHub Secrets 設定
+
+到 repo → **Settings** → **Secrets and variables** → **Actions** 新增：
+
+| Secret                        | 必填 | 說明                        |
+| ----------------------------- | ---- | --------------------------- |
+| `API_URL`                     | ✅   | API URL                     |
+| `SOCKET_URL`                  | ✅   | WebSocket URL               |
+| `TEACHER_TOKEN`               | ✅   | 老師 JWT Token              |
+| `TEACHER_WS_TOKEN`            | ✅   | 老師 WebSocket Token        |
+| `ORG_ID`                      | ✅   | 組織 ID                     |
+| `TEACHER_ID`                  | -    | 老師 ID                     |
+| `ROOM_ID`                     | -    | 教室 ID (specified-one-room)|
+| `COLLECTION_ID`               | ✅   | Quiz Collection ID          |
+| `K6_PROMETHEUS_RW_SERVER_URL` | ✅   | Prometheus Remote Write URL |
+
+### Prometheus Remote Write 設定
+
+**URL 格式：**
+
+```
+https://your-prometheus-domain.com/api/v1/write
+```
+
+**如需 Basic Auth：**
+
+```
+https://user:password@your-prometheus-domain.com/api/v1/write
+```
+
+### Prometheus 設定確認事項
+
+1. **Remote Write 已啟用**
+   - 確認 Prometheus 有開啟 `--web.enable-remote-write-receiver` 或 `--enable-feature=remote-write-receiver`
+
+2. **認證方式**
+   - Basic Auth：將帳密加入 URL
+   - Bearer Token：需額外設定 workflow
+
+3. **防火牆/Ingress**
+   - GitHub Actions IP 範圍需要被允許訪問
+   - 參考：https://api.github.com/meta
+
 ## 關鍵指標
 
 ### 核心指標 (Rate)
 
-| 指標                | 說明             | 目標  |
-| ------------------- | ---------------- | ----- |
-| `student_connected` | 學生連線成功率   | > 90% |
-| `student_seated`    | 學生選座成功率   | > 90% |
-| `seat_within_3s`    | 3 秒內選座成功率 | > 95% |
-| `answers_submitted` | 答案提交成功率   | > 80% |
-| `teacher_connected` | 老師連線成功率   | > 90% |
+| 指標                | 說明                 | 目標  |
+| ------------------- | -------------------- | ----- |
+| `student_connected` | 學生連線成功率       | > 90% |
+| `student_seated`    | 學生選座成功率       | > 90% |
+| `seat_within_3s`    | 3 秒內選座成功率     | > 95% |
+| `answers_submitted` | 答案提交成功率       | > 80% |
+| `teacher_connected` | 老師連線成功率       | > 90% |
 | `events_received`   | WebSocket 事件接收率 | > 90% |
 
 ### 時間指標 (Trend)
 
-| 指標                    | 說明                  | 目標     |
-| ----------------------- | --------------------- | -------- |
-| `seat_time`             | 選座 HTTP 請求時間    | < 3000ms |
-| `submit_time`           | 提交答案 HTTP 請求時間 | < 3000ms |
-| `time_to_seat`          | 總選座時間            | < 3000ms |
-| `ws_connect_time`       | WebSocket 連線時間    | < 500ms  |
-| `ws_connecting_time`    | WebSocket 建立連線時間 | < 500ms  |
-| `quiz_received_time`    | 收到 Quiz 事件時間    | -        |
-| `ws_connection_duration`| WebSocket 連線持續時間 | -        |
+| 指標                     | 說明                   | 目標     |
+| ------------------------ | ---------------------- | -------- |
+| `seat_time`              | 選座 HTTP 請求時間     | < 3000ms |
+| `submit_time`            | 提交答案 HTTP 請求時間 | < 3000ms |
+| `time_to_seat`           | 總選座時間             | < 3000ms |
+| `ws_connect_time`        | WebSocket 連線時間     | < 500ms  |
+| `ws_connecting_time`     | WebSocket 建立連線時間 | < 500ms  |
+| `quiz_received_time`     | 收到 Quiz 事件時間     | -        |
+| `ws_connection_duration` | WebSocket 連線持續時間 | -        |
 
 ### HTTP 指標
 
-| 指標                                    | 說明                | 目標     |
-| --------------------------------------- | ------------------- | -------- |
-| `http_req_duration{name:choose_seat}`   | 選座請求 95% 時間   | < 3000ms |
-| `http_req_duration{name:submit_answers}`| 提交答案 95% 時間   | < 3000ms |
-| `http_req_failed`                       | HTTP 請求失敗率     | < 10%    |
+| 指標                                     | 說明              | 目標     |
+| ---------------------------------------- | ----------------- | -------- |
+| `http_req_duration{name:choose_seat}`    | 選座請求 95% 時間 | < 3000ms |
+| `http_req_duration{name:submit_answers}` | 提交答案 95% 時間 | < 3000ms |
+| `http_req_failed`                        | HTTP 請求失敗率   | < 10%    |
 
 ### WebSocket 事件計數 (Counter)
 
-| 指標                        | 說明                     |
-| --------------------------- | ------------------------ |
-| `ws_event_quiz_created`     | Quiz 建立事件數          |
-| `ws_event_quiz_finished`    | Quiz 結束事件數          |
-| `ws_event_quiz_disclosed`   | Quiz 公開事件數          |
-| `ws_event_quiz_closed`      | Quiz 關閉事件數          |
-| `ws_event_end_lesson`       | 課程結束事件數           |
-| `ws_event_student_submitted`| 學生提交答案事件數       |
+| 指標                         | 說明               |
+| ---------------------------- | ------------------ |
+| `ws_event_quiz_created`      | Quiz 建立事件數    |
+| `ws_event_quiz_finished`     | Quiz 結束事件數    |
+| `ws_event_quiz_disclosed`    | Quiz 公開事件數    |
+| `ws_event_quiz_closed`       | Quiz 關閉事件數    |
+| `ws_event_end_lesson`        | 課程結束事件數     |
+| `ws_event_student_submitted` | 學生提交答案事件數 |
 
 ### WebSocket 連線狀態 (Counter)
 
-| 指標                      | 說明                      |
-| ------------------------- | ------------------------- |
-| `ws_connected`            | WebSocket 連線成功數      |
-| `ws_disconnected`         | WebSocket 正常斷線數      |
-| `ws_unexpected_close`     | WebSocket 非預期斷線數    |
-| `ws_connection_error`     | WebSocket 連線錯誤數      |
-| `ws_namespace_connected`  | Socket.IO Namespace 連線數 |
+| 指標                     | 說明                       |
+| ------------------------ | -------------------------- |
+| `ws_connected`           | WebSocket 連線成功數       |
+| `ws_disconnected`        | WebSocket 正常斷線數       |
+| `ws_unexpected_close`    | WebSocket 非預期斷線數     |
+| `ws_connection_error`    | WebSocket 連線錯誤數       |
+| `ws_namespace_connected` | Socket.IO Namespace 連線數 |
 
 ### HTTP 成功計數 (Counter)
 
-| 指標                         | 說明             |
-| ---------------------------- | ---------------- |
-| `http_success_create_room`   | 建立教室成功數   |
-| `http_success_create_lesson` | 建立課程成功數   |
-| `http_success_choose_seat`   | 選座成功數       |
-| `http_success_create_quizzes`| 建立 Quiz 成功數 |
-| `http_success_submit_answers`| 提交答案成功數   |
-| `http_success_finish_quiz`   | 結束 Quiz 成功數 |
-| `http_success_disclose_quiz` | 公開 Quiz 成功數 |
-| `http_success_close_quiz`    | 關閉 Quiz 成功數 |
-| `http_success_end_lesson`    | 結束課程成功數   |
+| 指標                          | 說明             |
+| ----------------------------- | ---------------- |
+| `http_success_create_room`    | 建立教室成功數   |
+| `http_success_create_lesson`  | 建立課程成功數   |
+| `http_success_choose_seat`    | 選座成功數       |
+| `http_success_create_quizzes` | 建立 Quiz 成功數 |
+| `http_success_submit_answers` | 提交答案成功數   |
+| `http_success_finish_quiz`    | 結束 Quiz 成功數 |
+| `http_success_disclose_quiz`  | 公開 Quiz 成功數 |
+| `http_success_close_quiz`     | 關閉 Quiz 成功數 |
+| `http_success_end_lesson`     | 結束課程成功數   |
 
 ## 測試結果範例
 
