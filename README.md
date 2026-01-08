@@ -1,6 +1,6 @@
-# K6 Classroom Stress Test
+# K6 Classroom Load Test
 
-ClassSwift 教室系統壓力測試腳本，使用 K6 + TypeScript 編寫。
+ClassSwift 教室系統負載測試腳本，使用 K6 + TypeScript 編寫。
 
 ## 專案結構
 
