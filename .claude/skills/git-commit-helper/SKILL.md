@@ -104,6 +104,7 @@ git diff --staged path/to/file
 - Include technical implementation details in summary
 - Write paragraphs in summary line
 - Use past tense
+- Include AI collaboration references (e.g., "Generated with Claude", "Co-Authored-By: Claude", etc.)
 
 ## Multi-file commits
 
@@ -209,3 +210,4 @@ git commit --amend --no-edit
 - [ ] Body explains WHY not just WHAT
 - [ ] Breaking changes are clearly marked
 - [ ] Related issue numbers are included
+- [ ] No AI collaboration references included
