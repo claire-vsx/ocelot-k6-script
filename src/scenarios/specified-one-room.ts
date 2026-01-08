@@ -1,10 +1,10 @@
 /**
- * 單教室壓力測試
+ * 指定教室測試
  *
- * 使用雙場景架構：學生場景 + 教師場景
+ * 針對指定的現有教室進行測試，使用雙場景架構：學生場景 + 教師場景
  *
  * Usage:
- *   npm run build && k6 run dist/single-room.js
+ *   pnpm build && k6 run dist/specified-one-room.js -e ROOM_ID=xxx
  */
 
 import { sleep, group } from 'k6';

@@ -15,8 +15,8 @@ ocelot-k6-script/
 │   │   ├── api.ts             # HTTP API 函數
 │   │   └── index.ts           # 模組匯出
 │   └── scenarios/              # 測試場景
-│       ├── multi-room.ts      # 多教室壓力測試
-│       └── single-room.ts     # 單教室測試
+│       ├── multi-room.ts           # 多教室壓力測試
+│       └── specified-one-room.ts   # 指定教室測試
 ├── monitoring/                 # 監控配置
 │   ├── docker-compose.yml     # Prometheus + Grafana
 │   ├── prometheus.yml         # Prometheus 設定
@@ -107,15 +107,15 @@ NUM_ROOMS=2 TEACHER_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-room.js
 NUM_ROOMS=4 TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-room.js
 ```
 
-### Single-Room (單教室測試)
+### Specified-One-Room (指定教室測試)
 
-單一教室測試，使用雙場景架構（學生 + 教師分離）。
+指定現有教室進行測試，使用雙場景架構（學生 + 教師分離）。適用於測試特定教室或已存在的教室環境。
 
 **環境變數：**
 
 | 變數                | 必填 | 預設值                | 說明                           |
 | ------------------- | ---- | --------------------- | ------------------------------ |
-| `ROOM_ID`           | ✅   | -                     | 教室 ID                        |
+| `ROOM_ID`           | ✅   | -                     | 指定的教室 ID                  |
 | `TEACHER_TOKEN`     | ✅   | -                     | 老師 JWT Token                 |
 | `TEACHER_WS_TOKEN`  | ✅   | -                     | 老師 WebSocket Token           |
 | `ORG_ID`            | ✅   | -                     | 組織 ID                        |
@@ -131,7 +131,7 @@ NUM_ROOMS=4 TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-
 **執行方式：**
 
 ```bash
-ROOM_ID=xxx TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/single-room.js
+ROOM_ID=xxx TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/specified-one-room.js
 ```
 
 ## 測試流程時間軸
@@ -154,10 +154,10 @@ t=0s     Setup: 建立 N 間教室
          └── Room N ...
 ```
 
-### Single-Room 流程
+### Specified-One-Room 流程
 
 ```
-t=0s     Setup: 建立 Lesson
+t=0s     Setup: 在指定教室建立 Lesson
          │
          ├── Students (50 VUs) ────────────────────────────────────────────►
          │   t=0-3s: 錯開連線 → WebSocket 連線 → 選座位 → 加入課程
