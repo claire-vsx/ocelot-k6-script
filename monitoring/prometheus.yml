@@ -4,7 +4,6 @@ global:
 
 scrape_configs:
   # Prometheus 自身監控
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
-
+      - targets: ["localhost:9090"]
