@@ -16,11 +16,8 @@ dist/
 npm-debug.log*
 
 # Environment
-.env
-.env.local
-.env.*.local
-
-# Keep example file
+# Ignore all .env files except .env.example
+.env*
 !.env.example
 
 # Test results
