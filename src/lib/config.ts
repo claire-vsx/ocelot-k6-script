@@ -42,6 +42,14 @@ export const CONFIG: Config = {
   // 內部時間配置
   STUDENT_WAIT_FOR_TEACHER: 1,
   STUDENT_RANDOM_DELAY_MAX: 1.5,
+
+  // WebSocket 重連配置
+  WS_MAX_RETRIES: parseInt(__ENV.WS_MAX_RETRIES || "3", 10),
+  WS_RETRY_DELAY: parseInt(__ENV.WS_RETRY_DELAY || "2", 10),  // 基礎延遲秒數
+
+  // 動態時間配置（可透過環境變數覆蓋，0 表示自動計算）
+  QUIZ_CREATE_DELAY: parseInt(__ENV.QUIZ_CREATE_DELAY || "0", 10),  // 創建 Quiz 延遲秒數
+  ANSWER_WAIT_TIME: parseInt(__ENV.ANSWER_WAIT_TIME || "0", 10),    // 等待作答時間秒數
 };
 
 /**

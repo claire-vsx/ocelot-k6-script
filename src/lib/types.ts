@@ -19,6 +19,12 @@ export interface Config {
     STUDENT_WAIT_TIME: number;
     STUDENT_WAIT_FOR_TEACHER: number;
     STUDENT_RANDOM_DELAY_MAX: number;
+    // WebSocket 重連配置
+    WS_MAX_RETRIES: number;
+    WS_RETRY_DELAY: number;
+    // 動態時間配置
+    QUIZ_CREATE_DELAY: number;
+    ANSWER_WAIT_TIME: number;
 }
 
 // === API 回應型別 ===
