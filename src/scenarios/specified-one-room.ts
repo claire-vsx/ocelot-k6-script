@@ -31,7 +31,7 @@ import {
     wsConnection,
 } from '../lib/metrics';
 
-import { NAMESPACE, encodeEvent, parseMessage, uuid } from '../lib/socketio';
+import { NAMESPACE, TEACHER_NAMESPACE, encodeEvent, parseMessage, uuid } from '../lib/socketio';
 
 import {
     createLesson,
@@ -288,7 +288,14 @@ export function teacherScenario(data: SetupData): void {
 
             switch (parsed.type) {
                 case 'open':
-                    socket.send(`40${NAMESPACE},${JSON.stringify({ role: 'teacher' })}`);
+                    // 老師使用 /teacher namespace，帶 auth 參數
+                    socket.send(`40${TEACHER_NAMESPACE},${JSON.stringify({
+                        role: 'teacher',
+                        access_token: CONFIG.TEACHER_WS_TOKEN,
+                        org_id: CONFIG.ORG_ID,
+                        display_name: CONFIG.DISPLAY_NAME,
+                        region: CONFIG.REGION,
+                    })}`);
                     break;
 
                 case 'ping':
@@ -296,15 +303,14 @@ export function teacherScenario(data: SetupData): void {
                     break;
 
                 case 'connect':
-                    if (parsed.namespace === NAMESPACE && !namespaceConnected) {
+                    if (parsed.namespace === TEACHER_NAMESPACE && !namespaceConnected) {
                         namespaceConnected = true;
                         wsConnection.namespaceConnected.add(1);
 
-                        socket.send(encodeEvent(NAMESPACE, 'join_lesson', {
+                        socket.send(encodeEvent(TEACHER_NAMESPACE, 'join_lesson', {
                             lesson_id: lessonId,
-                            user_id: 'teacher',
+                            user_id: CONFIG.TEACHER_ID,
                             role: 'teacher',
-                            access_token: CONFIG.TEACHER_TOKEN,
                         }));
                         wsConnection.teacherJoinLessonSent.add(1);
                         console.log('TEACHER: Joined lesson');
@@ -346,10 +352,9 @@ export function teacherScenario(data: SetupData): void {
                     break;
 
                 case 'event':
-                    if (parsed.namespace === NAMESPACE && parsed.event === 'batch_quizzes_student_submitted') {
+                    if (parsed.namespace === TEACHER_NAMESPACE && parsed.event === 'batch_quizzes_student_submitted') {
                         submittedCount++;
                         wsEvents.studentSubmitted.add(1);
-                        console.log(`TEACHER: Student submitted (${submittedCount}/${NUM_STUDENTS})`);
                     }
                     break;
             }
