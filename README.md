@@ -17,7 +17,8 @@ ocelot-k6-script/
 │   └── scenarios/              # 測試場景
 │       ├── multi-room.ts           # 多教室壓力測試
 │       ├── specified-one-room.ts   # 指定教室測試
-│       └── load-test.ts       # 長時間負載測試
+│       ├── load-test.ts            # 長時間負載測試
+│       └── stress-test.ts          # 階梯式壓力測試
 ├── monitoring/                 # 監控配置
 │   ├── docker-compose.yml     # Prometheus + Grafana
 │   ├── prometheus.yml         # Prometheus 設定
@@ -173,6 +174,72 @@ NUM_ROOMS=2 LESSON_DURATION=30 QUIZ_COUNT=5 TEACHER_TOKEN=xxx ORG_ID=xxx k6 run 
 source .env.local && k6 run --out experimental-prometheus-rw dist/load-test.js
 ```
 
+### Stress-Test (階梯式壓力測試)
+
+逐步增加負載找出系統極限，用於找出系統 breaking point、測試 auto-scaling 行為、驗證 graceful degradation。
+
+**測試架構：**
+- 1 位老師持續連線（創建 Quiz、結束課程）
+- 學生數量階梯式增加（ramping-vus）
+
+**環境變數：**
+
+| 變數                | 必填 | 預設值                | 說明                       |
+| ------------------- | ---- | --------------------- | -------------------------- |
+| `MAX_VUS`           | -    | 200                   | 最大虛擬用戶數（學生）     |
+| `STAGES`            | -    | 5                     | 階段數量                   |
+| `STAGE_DURATION`    | -    | 60s                   | 每階段持續時間             |
+| `TEACHER_TOKEN`     | ✅   | -                     | 老師 JWT Token             |
+| `TEACHER_WS_TOKEN`  | ✅   | -                     | 老師 WebSocket Token       |
+| `ORG_ID`            | ✅   | -                     | 組織 ID                    |
+| `API_URL`           | -    | http://localhost:8000 | API URL                    |
+| `SOCKET_URL`        | -    | 同 API_URL            | WebSocket URL              |
+| `COLLECTION_ID`     | -    | -                     | Quiz Collection ID         |
+
+**階梯式負載模式：**
+
+```
+VUs
+ ▲
+200│                    ████
+   │               ████
+160│          ████
+   │     ████
+120│████
+   │
+ 80│
+   │                         ████████  (Recovery)
+ 40│
+   │
+  0└─────────────────────────────────────► Time
+   │ 30s  60s  30s  60s ... 30s  60s  30s
+   │ ramp  ↑   ramp  ↑      ramp down
+```
+
+**執行方式：**
+
+```bash
+# 預設配置（200 VUs，5 階段，每階段 60 秒）
+source .env.local && k6 run dist/stress-test.js
+
+# 自訂配置
+MAX_VUS=500 STAGES=10 STAGE_DURATION=120s k6 run dist/stress-test.js
+
+# 輸出到 Prometheus
+source .env.local && k6 run --out experimental-prometheus-rw dist/stress-test.js
+```
+
+**專屬指標：**
+
+| 指標               | 說明             | 目標   |
+| ------------------ | ---------------- | ------ |
+| `stress_connected` | 學生連線成功率   | > 50%  |
+| `stress_seated`    | 學生選座成功率   | > 50%  |
+| `stress_seat_time` | 選座時間         | -      |
+| `teacher_connected`| 老師連線成功率   | 100%   |
+| `quiz_created`     | Quiz 創建成功率  | 100%   |
+| `lesson_ended`     | 課程結束成功率   | 100%   |
+
 ## 測試流程時間軸
 
 ### Multi-Room 流程
@@ -230,6 +297,29 @@ t=0s     Setup: 建立 Lesson
              t=7m:    建立 Quiz #2
              ...      (重複直到所有測驗完成)
              t=30m:   結束課程
+```
+
+### Stress-Test 流程
+
+```
+t=0s     Setup: 建立教室和課程
+         │
+         ├── Teacher (1 VU) ───────────────────────────────────────────────────────►
+         │   t=0s:    連線 WebSocket → 加入課程
+         │   t=30s:   建立 Quiz
+         │   t=~9m:   結束 Quiz → 公開 → 關閉 → 結束課程
+         │
+         └── Students (ramping-vus) ───────────────────────────────────────────────►
+             t=10s:   開始階梯式增加 VUs
+             │
+             │  Stage 1: 0 → 40 VUs (30s ramp) → 維持 60s
+             │  Stage 2: 40 → 80 VUs (30s ramp) → 維持 60s
+             │  Stage 3: 80 → 120 VUs (30s ramp) → 維持 60s
+             │  Stage 4: 120 → 160 VUs (30s ramp) → 維持 60s
+             │  Stage 5: 160 → 200 VUs (30s ramp) → 維持 60s
+             │  Recovery: 200 → 50 VUs (30s) → 維持 60s → 50 → 0 (30s)
+             │
+             每個學生: 連線 → 選座位 → 加入課程 → 30 秒後斷線
 ```
 
 ## 開發指南
