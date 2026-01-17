@@ -8,6 +8,7 @@ export default defineConfig({
         "multi-room": resolve(__dirname, "src/scenarios/multi-room.ts"),
         "specified-one-room": resolve(__dirname, "src/scenarios/specified-one-room.ts"),
         "load-test": resolve(__dirname, "src/scenarios/load-test.ts"),
+        "stress-test": resolve(__dirname, "src/scenarios/stress-test.ts"),
       },
       formats: ["es"],
       fileName: (_, entryName) => `${entryName}.js`,
