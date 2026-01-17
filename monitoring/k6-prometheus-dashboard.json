@@ -119,6 +119,7 @@
         { "expr": "max(k6_ws_event_quiz_finished_total)", "legendFormat": "quiz_finished", "refId": "G" },
         { "expr": "max(k6_ws_event_quiz_disclosed_total)", "legendFormat": "quiz_disclosed", "refId": "H" },
         { "expr": "max(k6_ws_event_quiz_closed_total)", "legendFormat": "quiz_closed", "refId": "I" },
+        { "expr": "max(k6_ws_event_student_submitted_total)", "legendFormat": "student_submitted", "refId": "L" },
         { "expr": "max(k6_ws_event_end_lesson_total)", "legendFormat": "end_lesson", "refId": "K" },
         { "expr": "max(k6_ws_disconnected_total)", "legendFormat": "ws_disconnected", "refId": "J" }
       ]
@@ -137,6 +138,7 @@
         { "expr": "k6_ws_join_lesson_sent_total", "legendFormat": "join_lesson", "refId": "D" },
         { "expr": "k6_ws_teacher_join_lesson_sent_total", "legendFormat": "teacher_join", "refId": "E" },
         { "expr": "k6_ws_event_quiz_created_total", "legendFormat": "quiz_created", "refId": "F" },
+        { "expr": "k6_ws_event_student_submitted_total", "legendFormat": "student_submitted", "refId": "L" },
         { "expr": "k6_ws_event_quiz_finished_total", "legendFormat": "quiz_finished", "refId": "G" },
         { "expr": "k6_ws_event_quiz_disclosed_total", "legendFormat": "quiz_disclosed", "refId": "H" },
         { "expr": "k6_ws_event_quiz_closed_total", "legendFormat": "quiz_closed", "refId": "I" },
@@ -242,6 +244,7 @@
         { "expr": "k6_ws_seat_chosen_total", "legendFormat": "seat_chosen", "refId": "C" },
         { "expr": "k6_ws_join_lesson_sent_total", "legendFormat": "join_lesson", "refId": "D" },
         { "expr": "k6_ws_event_quiz_created_total", "legendFormat": "quiz_created", "refId": "E" },
+        { "expr": "k6_ws_event_student_submitted_total", "legendFormat": "student_submitted", "refId": "L" },
         { "expr": "k6_ws_event_quiz_finished_total", "legendFormat": "quiz_finished", "refId": "F" },
         { "expr": "k6_ws_event_quiz_closed_total", "legendFormat": "quiz_closed", "refId": "G" },
         { "expr": "k6_ws_event_end_lesson_total", "legendFormat": "end_lesson", "refId": "K" },
