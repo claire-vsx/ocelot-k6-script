@@ -139,7 +139,7 @@ function studentBehavior(
   let connectionSuccess = false; // 追蹤連線是否成功
   const joinTime = Date.now();
 
-  ws.connect(wsUrl, {}, (socket) => {
+  ws.connect(wsUrl, { headers: { 'sticky-id': deviceId } }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {
@@ -382,7 +382,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
     }s`
   );
 
-  ws.connect(wsUrl, {}, (socket) => {
+  ws.connect(wsUrl, { headers: { 'sticky-id': CONFIG.TEACHER_ID } }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {

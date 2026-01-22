@@ -133,7 +133,7 @@ export function studentScenario(data: SetupData): void {
     let quizReceived = false;
     const joinTime = Date.now();
 
-    ws.connect(wsUrl, {}, socket => {
+    ws.connect(wsUrl, { headers: { 'sticky-id': deviceId } }, socket => {
         const wsStart = Date.now();
 
         socket.on('open', () => {
@@ -270,7 +270,7 @@ export function teacherScenario(data: SetupData): void {
     const quizCreateDelay = 2 * 1000; // 2s 後創建測驗
     const answerWaitTime = Math.max(STUDENT_WAIT_TIME - 20, 30) * 1000; // 作答等待時間
 
-    ws.connect(wsUrl, {}, socket => {
+    ws.connect(wsUrl, { headers: { 'sticky-id': CONFIG.TEACHER_ID } }, socket => {
         const wsStart = Date.now();
 
         socket.on('open', () => {

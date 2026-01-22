@@ -168,7 +168,7 @@ export function teacherScenario(data: SetupData): void {
 
     console.log('[Teacher] Starting teacher scenario...');
 
-    ws.connect(wsUrl, {}, socket => {
+    ws.connect(wsUrl, { headers: { 'sticky-id': CONFIG.TEACHER_ID } }, socket => {
         socket.on('open', () => {
             teacherConnected.add(1);
             console.log('[Teacher] WebSocket connected');
@@ -277,7 +277,7 @@ export function stressScenario(data: SetupData): void {
     let socketToken: string | null = null;
 
     // 嘗試連線
-    ws.connect(wsUrl, {}, socket => {
+    ws.connect(wsUrl, { headers: { 'sticky-id': deviceId } }, socket => {
         socket.on('open', () => {
             connected = true;
             stressConnected.add(1);
