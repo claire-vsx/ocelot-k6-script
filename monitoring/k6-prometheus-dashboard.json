@@ -160,42 +160,41 @@
       "title": "HTTP Request Duration (by API)",
       "type": "timeseries",
       "targets": [
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"create_room\"}))*1000", "legendFormat": "create_room p99", "refId": "A" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"create_lesson\"}))*1000", "legendFormat": "create_lesson p99", "refId": "B" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"start_lesson\"}))*1000", "legendFormat": "start_lesson p99", "refId": "C" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"end_lesson\"}))*1000", "legendFormat": "end_lesson p99", "refId": "D" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"choose_seat\"}))*1000", "legendFormat": "choose_seat p99", "refId": "E" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"create_quizzes\"}))*1000", "legendFormat": "create_quizzes p99", "refId": "F" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"fetch_quiz\"}))*1000", "legendFormat": "fetch_quiz p99", "refId": "G" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"submit_answers\"}))*1000", "legendFormat": "submit_answers p99", "refId": "H" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"finish_quiz\"}))*1000", "legendFormat": "finish_quiz p99", "refId": "I" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"close_quiz\"}))*1000", "legendFormat": "close_quiz p99", "refId": "J" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"disclose_quiz\"}))*1000", "legendFormat": "disclose_quiz p99", "refId": "K" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_http_req_duration_seconds{name=\"add_points\"}))*1000", "legendFormat": "add_points p99", "refId": "L" }
+        { "expr": "k6_http_req_duration_p99{name=\"create_room\"} * 1000", "legendFormat": "create_room p99", "refId": "A" },
+        { "expr": "k6_http_req_duration_p99{name=\"create_lesson\"} * 1000", "legendFormat": "create_lesson p99", "refId": "B" },
+        { "expr": "k6_http_req_duration_p99{name=\"start_lesson\"} * 1000", "legendFormat": "start_lesson p99", "refId": "C" },
+        { "expr": "k6_http_req_duration_p99{name=\"end_lesson\"} * 1000", "legendFormat": "end_lesson p99", "refId": "D" },
+        { "expr": "k6_http_req_duration_p99{name=\"choose_seat\"} * 1000", "legendFormat": "choose_seat p99", "refId": "E" },
+        { "expr": "k6_http_req_duration_p99{name=\"create_quizzes\"} * 1000", "legendFormat": "create_quizzes p99", "refId": "F" },
+        { "expr": "k6_http_req_duration_p99{name=\"fetch_quiz\"} * 1000", "legendFormat": "fetch_quiz p99", "refId": "G" },
+        { "expr": "k6_http_req_duration_p99{name=\"submit_answers\"} * 1000", "legendFormat": "submit_answers p99", "refId": "H" },
+        { "expr": "k6_http_req_duration_p99{name=\"finish_quiz\"} * 1000", "legendFormat": "finish_quiz p99", "refId": "I" },
+        { "expr": "k6_http_req_duration_p99{name=\"close_quiz\"} * 1000", "legendFormat": "close_quiz p99", "refId": "J" },
+        { "expr": "k6_http_req_duration_p99{name=\"disclose_quiz\"} * 1000", "legendFormat": "disclose_quiz p99", "refId": "K" },
+        { "expr": "k6_http_req_duration_p99{name=\"add_points\"} * 1000", "legendFormat": "add_points p99", "refId": "L" }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "reqps" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
-      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "title": "HTTP Requests Rate (req/s)",
+      "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "HTTP Requests Count (total)",
       "type": "timeseries",
       "targets": [
-        { "expr": "sum(rate(k6_http_reqs_total[30s]))", "legendFormat": "total_requests/s", "refId": "A" },
-        { "expr": "sum(rate(k6_http_req_failed_total[30s]))", "legendFormat": "failed_requests/s", "refId": "B" },
-        { "expr": "rate(k6_http_reqs_total{name=\"create_room\"}[30s])", "legendFormat": "create_room/s", "refId": "C" },
-        { "expr": "rate(k6_http_reqs_total{name=\"create_lesson\"}[30s])", "legendFormat": "create_lesson/s", "refId": "D" },
-        { "expr": "rate(k6_http_reqs_total{name=\"start_lesson\"}[30s])", "legendFormat": "start_lesson/s", "refId": "E" },
-        { "expr": "rate(k6_http_reqs_total{name=\"end_lesson\"}[30s])", "legendFormat": "end_lesson/s", "refId": "F" },
-        { "expr": "rate(k6_http_reqs_total{name=\"choose_seat\"}[30s])", "legendFormat": "choose_seat/s", "refId": "G" },
-        { "expr": "rate(k6_http_reqs_total{name=\"create_quizzes\"}[30s])", "legendFormat": "create_quizzes/s", "refId": "H" },
-        { "expr": "rate(k6_http_reqs_total{name=\"fetch_quiz\"}[30s])", "legendFormat": "fetch_quiz/s", "refId": "I" },
-        { "expr": "rate(k6_http_reqs_total{name=\"submit_answers\"}[30s])", "legendFormat": "submit_answers/s", "refId": "J" },
-        { "expr": "rate(k6_http_reqs_total{name=\"finish_quiz\"}[30s])", "legendFormat": "finish_quiz/s", "refId": "K" },
-        { "expr": "rate(k6_http_reqs_total{name=\"close_quiz\"}[30s])", "legendFormat": "close_quiz/s", "refId": "L" },
-        { "expr": "rate(k6_http_reqs_total{name=\"disclose_quiz\"}[30s])", "legendFormat": "disclose_quiz/s", "refId": "M" },
-        { "expr": "rate(k6_http_reqs_total{name=\"add_points\"}[30s])", "legendFormat": "add_points/s", "refId": "N" }
+        { "expr": "sum(k6_http_success_create_room_total + k6_http_success_create_lesson_total + k6_http_success_start_lesson_total + k6_http_success_choose_seat_total + k6_http_success_fetch_quiz_total + k6_http_success_submit_answers_total + k6_http_success_create_quizzes_total + k6_http_success_finish_quiz_total + k6_http_success_disclose_quiz_total + k6_http_success_close_quiz_total + k6_http_success_end_lesson_total) or vector(0)", "legendFormat": "total_requests", "refId": "A" },
+        { "expr": "k6_http_req_failed_rate or vector(0)", "legendFormat": "failed_rate", "refId": "B" },
+        { "expr": "k6_http_success_create_room_total", "legendFormat": "create_room", "refId": "C" },
+        { "expr": "k6_http_success_create_lesson_total", "legendFormat": "create_lesson", "refId": "D" },
+        { "expr": "k6_http_success_start_lesson_total", "legendFormat": "start_lesson", "refId": "E" },
+        { "expr": "k6_http_success_end_lesson_total", "legendFormat": "end_lesson", "refId": "F" },
+        { "expr": "k6_http_success_choose_seat_total", "legendFormat": "choose_seat", "refId": "G" },
+        { "expr": "k6_http_success_create_quizzes_total", "legendFormat": "create_quizzes", "refId": "H" },
+        { "expr": "k6_http_success_fetch_quiz_total", "legendFormat": "fetch_quiz", "refId": "I" },
+        { "expr": "k6_http_success_submit_answers_total", "legendFormat": "submit_answers", "refId": "J" },
+        { "expr": "k6_http_success_finish_quiz_total", "legendFormat": "finish_quiz", "refId": "K" },
+        { "expr": "k6_http_success_close_quiz_total", "legendFormat": "close_quiz", "refId": "L" },
+        { "expr": "k6_http_success_disclose_quiz_total", "legendFormat": "disclose_quiz", "refId": "M" }
       ]
     },
     {
@@ -212,10 +211,10 @@
       "title": "Custom Timing Metrics",
       "type": "timeseries",
       "targets": [
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_seat_time))", "legendFormat": "choose_seat p99", "refId": "A" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_submit_time))", "legendFormat": "submit_answers p99", "refId": "B" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_quiz_received_time))", "legendFormat": "quiz_received p99", "refId": "C" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_time_to_seat))", "legendFormat": "time_to_seat p99", "refId": "D" }
+        { "expr": "k6_seat_time_p99", "legendFormat": "choose_seat p99", "refId": "A" },
+        { "expr": "k6_submit_time_p99", "legendFormat": "submit_answers p99", "refId": "B" },
+        { "expr": "k6_quiz_received_time_p99", "legendFormat": "quiz_received p99", "refId": "C" },
+        { "expr": "k6_time_to_seat_p99", "legendFormat": "time_to_seat p99", "refId": "D" }
       ]
     },
     {
@@ -226,9 +225,9 @@
       "title": "WebSocket Timing",
       "type": "timeseries",
       "targets": [
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_ws_connect_time))", "legendFormat": "ws_connect p99 (ms)", "refId": "A" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_ws_connection_duration))", "legendFormat": "connection_duration p99 (ms)", "refId": "B" },
-        { "expr": "histogram_quantile(0.99, sum by (le) (k6_ws_connecting_seconds))*1000", "legendFormat": "ws_connecting p99 (ms)", "refId": "C" }
+        { "expr": "k6_ws_connect_time_p99", "legendFormat": "ws_connect p99 (ms)", "refId": "A" },
+        { "expr": "k6_ws_connection_duration_p99", "legendFormat": "connection_duration p99 (ms)", "refId": "B" },
+        { "expr": "k6_ws_connecting_p99 * 1000", "legendFormat": "ws_connecting p99 (ms)", "refId": "C" }
       ]
     },
     {
