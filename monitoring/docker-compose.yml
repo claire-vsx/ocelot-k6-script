@@ -14,6 +14,21 @@ services:
     networks:
       - k6-network
 
+  influxdb:
+    image: influxdb:1.8
+    container_name: k6-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - INFLUXDB_DB=k6
+      - INFLUXDB_HTTP_AUTH_ENABLED=false
+      - INFLUXDB_DATA_MAX_SERIES_PER_DATABASE=0
+      - INFLUXDB_DATA_MAX_VALUES_PER_TAG=0
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+    networks:
+      - k6-network
+
   grafana:
     image: grafana/grafana:latest
     container_name: k6-grafana
@@ -27,14 +42,16 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning
-      - ./k6-prometheus-dashboard.json:/var/lib/grafana/dashboards/k6-dashboard.json
+      - ./k6-influxdb-dashboard.json:/var/lib/grafana/dashboards/k6-dashboard.json
     depends_on:
       - prometheus
+      - influxdb
     networks:
       - k6-network
 
 volumes:
   prometheus-data:
+  influxdb-data:
   grafana-data:
 
 networks:
