@@ -83,10 +83,16 @@ export function getWsUrl(
   role: "student" | "teacher",
   params: Record<string, string> = {}
 ): string {
-  const baseUrl = CONFIG.SOCKET_URL.replace("http://", "ws://").replace(
+  let baseUrl = CONFIG.SOCKET_URL.replace("http://", "ws://").replace(
     "https://",
     "wss://"
   );
+
+  // 移除尾端斜線
+  baseUrl = baseUrl.replace(/\/+$/, "");
+
+  // 如果 SOCKET_URL 已經包含 /sockets，不要重複添加
+  const socketPath = baseUrl.endsWith("/sockets") ? "" : "/sockets";
 
   const queryParams = toQueryString({
     role,
@@ -95,7 +101,7 @@ export function getWsUrl(
     ...params,
   });
 
-  return `${baseUrl}/sockets/?${queryParams}`;
+  return `${baseUrl}${socketPath}/?${queryParams}`;
 }
 
 /**
@@ -115,4 +121,19 @@ export function getTeacherWsUrl(): string {
  */
 export function getStudentWsUrl(): string {
   return getWsUrl("student");
+}
+
+/**
+ * 取得 WebSocket 連線標頭
+ * @param stickyId 用於 session affinity 的 ID
+ */
+export function getWsHeaders(stickyId: string): Record<string, string> {
+  // 優先使用 WS_ORIGIN 環境變數，否則使用 API_URL
+  // 如果有多個 origin（逗號分隔），取第一個
+  const wsOrigin = __ENV.WS_ORIGIN || CONFIG.API_URL;
+  const origin = wsOrigin.split(',')[0].trim();
+  return {
+    'Origin': origin,
+    'sticky-id': stickyId,
+  };
 }
