@@ -23,7 +23,7 @@
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "title": "Students Connected",
       "type": "stat",
-      "targets": [{ "expr": "max(k6_ws_join_lesson_sent_total)", "refId": "A" }]
+      "targets": [{ "expr": "max(max_over_time(k6_ws_join_lesson_sent_total[5m])) or vector(0)", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
@@ -35,7 +35,7 @@
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "title": "Students Seated",
       "type": "stat",
-      "targets": [{ "expr": "max(k6_ws_seat_chosen_total)", "refId": "A" }]
+      "targets": [{ "expr": "max(max_over_time(k6_ws_seat_chosen_total[5m])) or vector(0)", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
@@ -47,7 +47,7 @@
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "title": "Answers Submitted",
       "type": "stat",
-      "targets": [{ "expr": "max(k6_http_success_submit_answers_total)", "refId": "A" }]
+      "targets": [{ "expr": "max(max_over_time(k6_http_success_submit_answers_total[5m])) or vector(0)", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
@@ -59,7 +59,7 @@
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "title": "Events Received",
       "type": "stat",
-      "targets": [{ "expr": "max(k6_ws_event_quiz_created_total)", "refId": "A" }]
+      "targets": [{ "expr": "max(max_over_time(k6_ws_event_quiz_created_total[5m])) or vector(0)", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
@@ -71,7 +71,7 @@
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "title": "Errors",
       "type": "stat",
-      "targets": [{ "expr": "max(k6_errors_total) or vector(0)", "refId": "A" }]
+      "targets": [{ "expr": "max(max_over_time(k6_errors_total[5m])) or vector(0)", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
@@ -83,7 +83,7 @@
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "title": "HTTP Requests",
       "type": "stat",
-      "targets": [{ "expr": "max(k6_http_reqs_total)", "refId": "A" }]
+      "targets": [{ "expr": "max(max_over_time(k6_http_reqs_total[5m])) or vector(0)", "refId": "A" }]
     },
     {
       "collapsed": false,
@@ -110,40 +110,40 @@
       "title": "Socket Events Summary",
       "type": "bargauge",
       "targets": [
-        { "expr": "max(k6_ws_connected_total)", "legendFormat": "ws_connected", "refId": "A" },
-        { "expr": "max(k6_ws_namespace_connected_total)", "legendFormat": "namespace_connected", "refId": "B" },
-        { "expr": "max(k6_ws_seat_chosen_total)", "legendFormat": "seat_chosen", "refId": "C" },
-        { "expr": "max(k6_ws_join_lesson_sent_total)", "legendFormat": "join_lesson", "refId": "D" },
-        { "expr": "max(k6_ws_teacher_join_lesson_sent_total)", "legendFormat": "teacher_join", "refId": "E" },
-        { "expr": "max(k6_ws_event_quiz_created_total)", "legendFormat": "quiz_created", "refId": "F" },
-        { "expr": "max(k6_ws_event_quiz_finished_total)", "legendFormat": "quiz_finished", "refId": "G" },
-        { "expr": "max(k6_ws_event_quiz_disclosed_total)", "legendFormat": "quiz_disclosed", "refId": "H" },
-        { "expr": "max(k6_ws_event_quiz_closed_total)", "legendFormat": "quiz_closed", "refId": "I" },
-        { "expr": "max(k6_ws_event_student_submitted_total)", "legendFormat": "student_submitted", "refId": "L" },
-        { "expr": "max(k6_ws_event_end_lesson_total)", "legendFormat": "end_lesson", "refId": "K" },
-        { "expr": "max(k6_ws_disconnected_total)", "legendFormat": "ws_disconnected", "refId": "J" }
+        { "expr": "max(max_over_time(k6_ws_connected_total[5m])) or vector(0)", "legendFormat": "ws_connected", "refId": "A" },
+        { "expr": "max(max_over_time(k6_ws_namespace_connected_total[5m])) or vector(0)", "legendFormat": "namespace_connected", "refId": "B" },
+        { "expr": "max(max_over_time(k6_ws_seat_chosen_total[5m])) or vector(0)", "legendFormat": "seat_chosen", "refId": "C" },
+        { "expr": "max(max_over_time(k6_ws_join_lesson_sent_total[5m])) or vector(0)", "legendFormat": "join_lesson", "refId": "D" },
+        { "expr": "max(max_over_time(k6_ws_teacher_join_lesson_sent_total[5m])) or vector(0)", "legendFormat": "teacher_join", "refId": "E" },
+        { "expr": "max(max_over_time(k6_ws_event_quiz_created_total[5m])) or vector(0)", "legendFormat": "quiz_created", "refId": "F" },
+        { "expr": "max(max_over_time(k6_ws_event_quiz_finished_total[5m])) or vector(0)", "legendFormat": "quiz_finished", "refId": "G" },
+        { "expr": "max(max_over_time(k6_ws_event_quiz_disclosed_total[5m])) or vector(0)", "legendFormat": "quiz_disclosed", "refId": "H" },
+        { "expr": "max(max_over_time(k6_ws_event_quiz_closed_total[5m])) or vector(0)", "legendFormat": "quiz_closed", "refId": "I" },
+        { "expr": "max(max_over_time(k6_ws_event_student_submitted_total[5m])) or vector(0)", "legendFormat": "student_submitted", "refId": "L" },
+        { "expr": "max(max_over_time(k6_ws_event_end_lesson_total[5m])) or vector(0)", "legendFormat": "end_lesson", "refId": "K" },
+        { "expr": "max(max_over_time(k6_ws_disconnected_total[5m])) or vector(0)", "legendFormat": "ws_disconnected", "refId": "J" }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
       "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Socket Events Over Time",
       "type": "timeseries",
       "targets": [
-        { "expr": "k6_ws_connected_total", "legendFormat": "ws_connected", "refId": "A" },
-        { "expr": "k6_ws_namespace_connected_total", "legendFormat": "namespace_connected", "refId": "B" },
-        { "expr": "k6_ws_seat_chosen_total", "legendFormat": "seat_chosen", "refId": "C" },
-        { "expr": "k6_ws_join_lesson_sent_total", "legendFormat": "join_lesson", "refId": "D" },
-        { "expr": "k6_ws_teacher_join_lesson_sent_total", "legendFormat": "teacher_join", "refId": "E" },
-        { "expr": "k6_ws_event_quiz_created_total", "legendFormat": "quiz_created", "refId": "F" },
-        { "expr": "k6_ws_event_student_submitted_total", "legendFormat": "student_submitted", "refId": "L" },
-        { "expr": "k6_ws_event_quiz_finished_total", "legendFormat": "quiz_finished", "refId": "G" },
-        { "expr": "k6_ws_event_quiz_disclosed_total", "legendFormat": "quiz_disclosed", "refId": "H" },
-        { "expr": "k6_ws_event_quiz_closed_total", "legendFormat": "quiz_closed", "refId": "I" },
-        { "expr": "k6_ws_event_end_lesson_total", "legendFormat": "end_lesson", "refId": "K" },
-        { "expr": "k6_ws_disconnected_total", "legendFormat": "ws_disconnected", "refId": "J" }
+        { "expr": "max_over_time(k6_ws_connected_total[5m])", "legendFormat": "ws_connected", "refId": "A" },
+        { "expr": "max_over_time(k6_ws_namespace_connected_total[5m])", "legendFormat": "namespace_connected", "refId": "B" },
+        { "expr": "max_over_time(k6_ws_seat_chosen_total[5m])", "legendFormat": "seat_chosen", "refId": "C" },
+        { "expr": "max_over_time(k6_ws_join_lesson_sent_total[5m])", "legendFormat": "join_lesson", "refId": "D" },
+        { "expr": "max_over_time(k6_ws_teacher_join_lesson_sent_total[5m])", "legendFormat": "teacher_join", "refId": "E" },
+        { "expr": "max_over_time(k6_ws_event_quiz_created_total[5m])", "legendFormat": "quiz_created", "refId": "F" },
+        { "expr": "max_over_time(k6_ws_event_student_submitted_total[5m])", "legendFormat": "student_submitted", "refId": "L" },
+        { "expr": "max_over_time(k6_ws_event_quiz_finished_total[5m])", "legendFormat": "quiz_finished", "refId": "G" },
+        { "expr": "max_over_time(k6_ws_event_quiz_disclosed_total[5m])", "legendFormat": "quiz_disclosed", "refId": "H" },
+        { "expr": "max_over_time(k6_ws_event_quiz_closed_total[5m])", "legendFormat": "quiz_closed", "refId": "I" },
+        { "expr": "max_over_time(k6_ws_event_end_lesson_total[5m])", "legendFormat": "end_lesson", "refId": "K" },
+        { "expr": "max_over_time(k6_ws_disconnected_total[5m])", "legendFormat": "ws_disconnected", "refId": "J" }
       ]
     },
     {
@@ -154,47 +154,47 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "HTTP Request Duration (by API)",
       "type": "timeseries",
       "targets": [
-        { "expr": "k6_http_req_duration_p99{name=\"create_room\"} * 1000", "legendFormat": "create_room p99", "refId": "A" },
-        { "expr": "k6_http_req_duration_p99{name=\"create_lesson\"} * 1000", "legendFormat": "create_lesson p99", "refId": "B" },
-        { "expr": "k6_http_req_duration_p99{name=\"start_lesson\"} * 1000", "legendFormat": "start_lesson p99", "refId": "C" },
-        { "expr": "k6_http_req_duration_p99{name=\"end_lesson\"} * 1000", "legendFormat": "end_lesson p99", "refId": "D" },
-        { "expr": "k6_http_req_duration_p99{name=\"choose_seat\"} * 1000", "legendFormat": "choose_seat p99", "refId": "E" },
-        { "expr": "k6_http_req_duration_p99{name=\"create_quizzes\"} * 1000", "legendFormat": "create_quizzes p99", "refId": "F" },
-        { "expr": "k6_http_req_duration_p99{name=\"fetch_quiz\"} * 1000", "legendFormat": "fetch_quiz p99", "refId": "G" },
-        { "expr": "k6_http_req_duration_p99{name=\"submit_answers\"} * 1000", "legendFormat": "submit_answers p99", "refId": "H" },
-        { "expr": "k6_http_req_duration_p99{name=\"finish_quiz\"} * 1000", "legendFormat": "finish_quiz p99", "refId": "I" },
-        { "expr": "k6_http_req_duration_p99{name=\"close_quiz\"} * 1000", "legendFormat": "close_quiz p99", "refId": "J" },
-        { "expr": "k6_http_req_duration_p99{name=\"disclose_quiz\"} * 1000", "legendFormat": "disclose_quiz p99", "refId": "K" },
-        { "expr": "k6_http_req_duration_p99{name=\"add_points\"} * 1000", "legendFormat": "add_points p99", "refId": "L" }
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"create_room\"}[5m]) * 1000", "legendFormat": "create_room p99", "refId": "A" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"create_lesson\"}[5m]) * 1000", "legendFormat": "create_lesson p99", "refId": "B" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"start_lesson\"}[5m]) * 1000", "legendFormat": "start_lesson p99", "refId": "C" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"end_lesson\"}[5m]) * 1000", "legendFormat": "end_lesson p99", "refId": "D" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"choose_seat\"}[5m]) * 1000", "legendFormat": "choose_seat p99", "refId": "E" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"create_quizzes\"}[5m]) * 1000", "legendFormat": "create_quizzes p99", "refId": "F" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"fetch_quiz\"}[5m]) * 1000", "legendFormat": "fetch_quiz p99", "refId": "G" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"submit_answers\"}[5m]) * 1000", "legendFormat": "submit_answers p99", "refId": "H" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"finish_quiz\"}[5m]) * 1000", "legendFormat": "finish_quiz p99", "refId": "I" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"close_quiz\"}[5m]) * 1000", "legendFormat": "close_quiz p99", "refId": "J" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"disclose_quiz\"}[5m]) * 1000", "legendFormat": "disclose_quiz p99", "refId": "K" },
+        { "expr": "max_over_time(k6_http_req_duration_p99{name=\"add_points\"}[5m]) * 1000", "legendFormat": "add_points p99", "refId": "L" }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
       "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "HTTP Requests Count (total)",
       "type": "timeseries",
       "targets": [
-        { "expr": "sum(k6_http_success_create_room_total + k6_http_success_create_lesson_total + k6_http_success_start_lesson_total + k6_http_success_choose_seat_total + k6_http_success_fetch_quiz_total + k6_http_success_submit_answers_total + k6_http_success_create_quizzes_total + k6_http_success_finish_quiz_total + k6_http_success_disclose_quiz_total + k6_http_success_close_quiz_total + k6_http_success_end_lesson_total) or vector(0)", "legendFormat": "total_requests", "refId": "A" },
-        { "expr": "k6_http_req_failed_rate or vector(0)", "legendFormat": "failed_rate", "refId": "B" },
-        { "expr": "k6_http_success_create_room_total", "legendFormat": "create_room", "refId": "C" },
-        { "expr": "k6_http_success_create_lesson_total", "legendFormat": "create_lesson", "refId": "D" },
-        { "expr": "k6_http_success_start_lesson_total", "legendFormat": "start_lesson", "refId": "E" },
-        { "expr": "k6_http_success_end_lesson_total", "legendFormat": "end_lesson", "refId": "F" },
-        { "expr": "k6_http_success_choose_seat_total", "legendFormat": "choose_seat", "refId": "G" },
-        { "expr": "k6_http_success_create_quizzes_total", "legendFormat": "create_quizzes", "refId": "H" },
-        { "expr": "k6_http_success_fetch_quiz_total", "legendFormat": "fetch_quiz", "refId": "I" },
-        { "expr": "k6_http_success_submit_answers_total", "legendFormat": "submit_answers", "refId": "J" },
-        { "expr": "k6_http_success_finish_quiz_total", "legendFormat": "finish_quiz", "refId": "K" },
-        { "expr": "k6_http_success_close_quiz_total", "legendFormat": "close_quiz", "refId": "L" },
-        { "expr": "k6_http_success_disclose_quiz_total", "legendFormat": "disclose_quiz", "refId": "M" }
+        { "expr": "sum(max_over_time(k6_http_success_create_room_total[5m]) + max_over_time(k6_http_success_create_lesson_total[5m]) + max_over_time(k6_http_success_start_lesson_total[5m]) + max_over_time(k6_http_success_choose_seat_total[5m]) + max_over_time(k6_http_success_fetch_quiz_total[5m]) + max_over_time(k6_http_success_submit_answers_total[5m]) + max_over_time(k6_http_success_create_quizzes_total[5m]) + max_over_time(k6_http_success_finish_quiz_total[5m]) + max_over_time(k6_http_success_disclose_quiz_total[5m]) + max_over_time(k6_http_success_close_quiz_total[5m]) + max_over_time(k6_http_success_end_lesson_total[5m]))", "legendFormat": "total_requests", "refId": "A" },
+        { "expr": "max_over_time(k6_http_req_failed_rate[5m])", "legendFormat": "failed_rate", "refId": "B" },
+        { "expr": "max_over_time(k6_http_success_create_room_total[5m])", "legendFormat": "create_room", "refId": "C" },
+        { "expr": "max_over_time(k6_http_success_create_lesson_total[5m])", "legendFormat": "create_lesson", "refId": "D" },
+        { "expr": "max_over_time(k6_http_success_start_lesson_total[5m])", "legendFormat": "start_lesson", "refId": "E" },
+        { "expr": "max_over_time(k6_http_success_end_lesson_total[5m])", "legendFormat": "end_lesson", "refId": "F" },
+        { "expr": "max_over_time(k6_http_success_choose_seat_total[5m])", "legendFormat": "choose_seat", "refId": "G" },
+        { "expr": "max_over_time(k6_http_success_create_quizzes_total[5m])", "legendFormat": "create_quizzes", "refId": "H" },
+        { "expr": "max_over_time(k6_http_success_fetch_quiz_total[5m])", "legendFormat": "fetch_quiz", "refId": "I" },
+        { "expr": "max_over_time(k6_http_success_submit_answers_total[5m])", "legendFormat": "submit_answers", "refId": "J" },
+        { "expr": "max_over_time(k6_http_success_finish_quiz_total[5m])", "legendFormat": "finish_quiz", "refId": "K" },
+        { "expr": "max_over_time(k6_http_success_close_quiz_total[5m])", "legendFormat": "close_quiz", "refId": "L" },
+        { "expr": "max_over_time(k6_http_success_disclose_quiz_total[5m])", "legendFormat": "disclose_quiz", "refId": "M" }
       ]
     },
     {
@@ -205,51 +205,51 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Custom Timing Metrics",
       "type": "timeseries",
       "targets": [
-        { "expr": "k6_seat_time_p99", "legendFormat": "choose_seat p99", "refId": "A" },
-        { "expr": "k6_submit_time_p99", "legendFormat": "submit_answers p99", "refId": "B" },
-        { "expr": "k6_quiz_received_time_p99", "legendFormat": "quiz_received p99", "refId": "C" },
-        { "expr": "k6_time_to_seat_p99", "legendFormat": "time_to_seat p99", "refId": "D" }
+        { "expr": "max_over_time(k6_seat_time_p99[5m])", "legendFormat": "choose_seat p99", "refId": "A" },
+        { "expr": "max_over_time(k6_submit_time_p99[5m])", "legendFormat": "submit_answers p99", "refId": "B" },
+        { "expr": "max_over_time(k6_quiz_received_time_p99[5m])", "legendFormat": "quiz_received p99", "refId": "C" },
+        { "expr": "max_over_time(k6_time_to_seat_p99[5m])", "legendFormat": "time_to_seat p99", "refId": "D" }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "WebSocket Timing",
       "type": "timeseries",
       "targets": [
-        { "expr": "k6_ws_connect_time_p99", "legendFormat": "ws_connect p99 (ms)", "refId": "A" },
-        { "expr": "k6_ws_connection_duration_p99", "legendFormat": "connection_duration p99 (ms)", "refId": "B" },
-        { "expr": "k6_ws_connecting_p99 * 1000", "legendFormat": "ws_connecting p99 (ms)", "refId": "C" }
+        { "expr": "max_over_time(k6_ws_connect_time_p99[5m])", "legendFormat": "ws_connect p99 (ms)", "refId": "A" },
+        { "expr": "max_over_time(k6_ws_connection_duration_p99[5m])", "legendFormat": "connection_duration p99 (ms)", "refId": "B" },
+        { "expr": "max_over_time(k6_ws_connecting_p99[5m]) * 1000", "legendFormat": "ws_connecting p99 (ms)", "refId": "C" }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 38 },
       "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "WebSocket Connection Lifecycle",
       "type": "timeseries",
       "targets": [
-        { "expr": "k6_ws_connected_total", "legendFormat": "connected", "refId": "A" },
-        { "expr": "k6_ws_namespace_connected_total", "legendFormat": "namespace_connected", "refId": "B" },
-        { "expr": "k6_ws_seat_chosen_total", "legendFormat": "seat_chosen", "refId": "C" },
-        { "expr": "k6_ws_join_lesson_sent_total", "legendFormat": "join_lesson", "refId": "D" },
-        { "expr": "k6_ws_event_quiz_created_total", "legendFormat": "quiz_created", "refId": "E" },
-        { "expr": "k6_ws_event_student_submitted_total", "legendFormat": "student_submitted", "refId": "L" },
-        { "expr": "k6_ws_event_quiz_finished_total", "legendFormat": "quiz_finished", "refId": "F" },
-        { "expr": "k6_ws_event_quiz_closed_total", "legendFormat": "quiz_closed", "refId": "G" },
-        { "expr": "k6_ws_event_end_lesson_total", "legendFormat": "end_lesson", "refId": "K" },
-        { "expr": "k6_ws_disconnected_total", "legendFormat": "disconnected", "refId": "H" },
-        { "expr": "k6_ws_unexpected_close_total", "legendFormat": "unexpected_close", "refId": "I" },
-        { "expr": "k6_ws_connection_error_total", "legendFormat": "connection_error", "refId": "J" }
+        { "expr": "max_over_time(k6_ws_connected_total[5m])", "legendFormat": "connected", "refId": "A" },
+        { "expr": "max_over_time(k6_ws_namespace_connected_total[5m])", "legendFormat": "namespace_connected", "refId": "B" },
+        { "expr": "max_over_time(k6_ws_seat_chosen_total[5m])", "legendFormat": "seat_chosen", "refId": "C" },
+        { "expr": "max_over_time(k6_ws_join_lesson_sent_total[5m])", "legendFormat": "join_lesson", "refId": "D" },
+        { "expr": "max_over_time(k6_ws_event_quiz_created_total[5m])", "legendFormat": "quiz_created", "refId": "E" },
+        { "expr": "max_over_time(k6_ws_event_student_submitted_total[5m])", "legendFormat": "student_submitted", "refId": "L" },
+        { "expr": "max_over_time(k6_ws_event_quiz_finished_total[5m])", "legendFormat": "quiz_finished", "refId": "F" },
+        { "expr": "max_over_time(k6_ws_event_quiz_closed_total[5m])", "legendFormat": "quiz_closed", "refId": "G" },
+        { "expr": "max_over_time(k6_ws_event_end_lesson_total[5m])", "legendFormat": "end_lesson", "refId": "K" },
+        { "expr": "max_over_time(k6_ws_disconnected_total[5m])", "legendFormat": "disconnected", "refId": "H" },
+        { "expr": "max_over_time(k6_ws_unexpected_close_total[5m])", "legendFormat": "unexpected_close", "refId": "I" },
+        { "expr": "max_over_time(k6_ws_connection_error_total[5m])", "legendFormat": "connection_error", "refId": "J" }
       ]
     },
     {
@@ -277,17 +277,17 @@
       "title": "HTTP Success by API",
       "type": "bargauge",
       "targets": [
-        { "expr": "max(k6_http_success_create_room_total) or vector(0)", "legendFormat": "create_room", "refId": "A" },
-        { "expr": "max(k6_http_success_create_lesson_total) or vector(0)", "legendFormat": "create_lesson", "refId": "B" },
-        { "expr": "max(k6_http_success_start_lesson_total) or vector(0)", "legendFormat": "start_lesson", "refId": "C" },
-        { "expr": "max(k6_http_success_choose_seat_total) or vector(0)", "legendFormat": "choose_seat", "refId": "D" },
-        { "expr": "max(k6_http_success_fetch_quiz_total) or vector(0)", "legendFormat": "fetch_quiz", "refId": "E" },
-        { "expr": "max(k6_http_success_submit_answers_total) or vector(0)", "legendFormat": "submit_answers", "refId": "F" },
-        { "expr": "max(k6_http_success_create_quizzes_total) or vector(0)", "legendFormat": "create_quizzes", "refId": "G" },
-        { "expr": "max(k6_http_success_finish_quiz_total) or vector(0)", "legendFormat": "finish_quiz", "refId": "H" },
-        { "expr": "max(k6_http_success_disclose_quiz_total) or vector(0)", "legendFormat": "disclose_quiz", "refId": "I" },
-        { "expr": "max(k6_http_success_close_quiz_total) or vector(0)", "legendFormat": "close_quiz", "refId": "J" },
-        { "expr": "max(k6_http_success_end_lesson_total) or vector(0)", "legendFormat": "end_lesson", "refId": "K" }
+        { "expr": "max(max_over_time(k6_http_success_create_room_total[5m])) or vector(0)", "legendFormat": "create_room", "refId": "A" },
+        { "expr": "max(max_over_time(k6_http_success_create_lesson_total[5m])) or vector(0)", "legendFormat": "create_lesson", "refId": "B" },
+        { "expr": "max(max_over_time(k6_http_success_start_lesson_total[5m])) or vector(0)", "legendFormat": "start_lesson", "refId": "C" },
+        { "expr": "max(max_over_time(k6_http_success_choose_seat_total[5m])) or vector(0)", "legendFormat": "choose_seat", "refId": "D" },
+        { "expr": "max(max_over_time(k6_http_success_fetch_quiz_total[5m])) or vector(0)", "legendFormat": "fetch_quiz", "refId": "E" },
+        { "expr": "max(max_over_time(k6_http_success_submit_answers_total[5m])) or vector(0)", "legendFormat": "submit_answers", "refId": "F" },
+        { "expr": "max(max_over_time(k6_http_success_create_quizzes_total[5m])) or vector(0)", "legendFormat": "create_quizzes", "refId": "G" },
+        { "expr": "max(max_over_time(k6_http_success_finish_quiz_total[5m])) or vector(0)", "legendFormat": "finish_quiz", "refId": "H" },
+        { "expr": "max(max_over_time(k6_http_success_disclose_quiz_total[5m])) or vector(0)", "legendFormat": "disclose_quiz", "refId": "I" },
+        { "expr": "max(max_over_time(k6_http_success_close_quiz_total[5m])) or vector(0)", "legendFormat": "close_quiz", "refId": "J" },
+        { "expr": "max(max_over_time(k6_http_success_end_lesson_total[5m])) or vector(0)", "legendFormat": "end_lesson", "refId": "K" }
       ]
     },
     {
@@ -315,13 +315,13 @@
       "title": "HTTP Errors by Status Code",
       "type": "bargauge",
       "targets": [
-        { "expr": "max(k6_http_error_400_total) or vector(0)", "legendFormat": "400", "refId": "A" },
-        { "expr": "max(k6_http_error_401_total) or vector(0)", "legendFormat": "401", "refId": "B" },
-        { "expr": "max(k6_http_error_403_total) or vector(0)", "legendFormat": "403", "refId": "C" },
-        { "expr": "max(k6_http_error_404_total) or vector(0)", "legendFormat": "404", "refId": "D" },
-        { "expr": "max(k6_http_error_409_total) or vector(0)", "legendFormat": "409", "refId": "E" },
-        { "expr": "max(k6_http_error_500_total) or vector(0)", "legendFormat": "500", "refId": "F" },
-        { "expr": "max(k6_seat_error_409_total) or vector(0)", "legendFormat": "seat_409", "refId": "G" }
+        { "expr": "max(max_over_time(k6_http_error_400_total[5m])) or vector(0)", "legendFormat": "400", "refId": "A" },
+        { "expr": "max(max_over_time(k6_http_error_401_total[5m])) or vector(0)", "legendFormat": "401", "refId": "B" },
+        { "expr": "max(max_over_time(k6_http_error_403_total[5m])) or vector(0)", "legendFormat": "403", "refId": "C" },
+        { "expr": "max(max_over_time(k6_http_error_404_total[5m])) or vector(0)", "legendFormat": "404", "refId": "D" },
+        { "expr": "max(max_over_time(k6_http_error_409_total[5m])) or vector(0)", "legendFormat": "409", "refId": "E" },
+        { "expr": "max(max_over_time(k6_http_error_500_total[5m])) or vector(0)", "legendFormat": "500", "refId": "F" },
+        { "expr": "max(max_over_time(k6_seat_error_409_total[5m])) or vector(0)", "legendFormat": "seat_409", "refId": "G" }
       ]
     }
   ],
@@ -346,7 +346,7 @@
       }
     ]
   },
-  "time": { "from": "now-5m", "to": "now" },
+  "time": { "from": "now-15m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
   "title": "k6 Load Testing (Prometheus)",
