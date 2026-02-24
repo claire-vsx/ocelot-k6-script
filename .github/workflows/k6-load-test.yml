@@ -95,9 +95,10 @@ jobs:
           # Other
           DISPLAY_NAME: "GitHub-Runner"
           REGION: "TW"
-          # Prometheus Remote Write
-          K6_PROMETHEUS_RW_SERVER_URL: ${{ secrets.K6_PROMETHEUS_RW_SERVER_URL }}
-          K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM: "true"
+          # InfluxDB Output
+          # TODO: 建立 VirtualService 對外暴露 InfluxDB 後，將 K6_INFLUXDB_ADDR 改為 K8s InfluxDB 地址
+          K6_INFLUXDB_ADDR: ${{ secrets.K6_INFLUXDB_ADDR }}
+          K6_INFLUXDB_PUSH_INTERVAL: "5s"
         run: |
           echo "========================================"
           echo "Running K6 Load Test"
@@ -106,9 +107,9 @@ jobs:
           echo "API_URL: $API_URL"
           echo "NUM_ROOMS: $NUM_ROOMS"
           echo "STUDENTS_PER_ROOM: $STUDENTS_PER_ROOM"
-          echo "Prometheus: $K6_PROMETHEUS_RW_SERVER_URL"
+          echo "InfluxDB: $K6_INFLUXDB_ADDR"
           echo "========================================"
 
           k6 run \
-            --out experimental-prometheus-rw \
+            --out influxdb=${K6_INFLUXDB_ADDR}/k6 \
             dist/${{ inputs.scenario }}.js
