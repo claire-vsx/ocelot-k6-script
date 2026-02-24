@@ -31,6 +31,7 @@ import {
   CONFIG,
   getTeacherWsUrl,
   getStudentWsUrl,
+  getWsHeaders,
 } from "../lib/config";
 
 import {
@@ -166,7 +167,7 @@ function studentBehavior(
   let timedOut = false; // 超時主動斷線
   let hasError = false; // 發生錯誤
 
-  ws.connect(wsUrl, { headers: { 'sticky-id': deviceId } }, (socket) => {
+  ws.connect(wsUrl, { headers: getWsHeaders(deviceId) }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {
@@ -359,7 +360,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
   let lessonFinished = false; // 正常完成課程
   let hasError = false; // 發生錯誤
 
-  ws.connect(wsUrl, { headers: { 'sticky-id': CONFIG.TEACHER_ID } }, (socket) => {
+  ws.connect(wsUrl, { headers: getWsHeaders(CONFIG.TEACHER_ID) }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {

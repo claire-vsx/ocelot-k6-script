@@ -12,7 +12,7 @@ import ws from 'k6/ws';
 import exec from 'k6/execution';
 import { Options } from 'k6/options';
 
-import { CONFIG, getTeacherWsUrl, getStudentWsUrl } from '../lib/config';
+import { CONFIG, getTeacherWsUrl, getStudentWsUrl, getWsHeaders } from '../lib/config';
 
 import {
     studentConnected,
@@ -133,7 +133,7 @@ export function studentScenario(data: SetupData): void {
     let quizReceived = false;
     const joinTime = Date.now();
 
-    ws.connect(wsUrl, { headers: { 'sticky-id': deviceId } }, socket => {
+    ws.connect(wsUrl, { headers: getWsHeaders(deviceId) }, socket => {
         const wsStart = Date.now();
 
         socket.on('open', () => {
@@ -270,7 +270,7 @@ export function teacherScenario(data: SetupData): void {
     const quizCreateDelay = 2 * 1000; // 2s 後創建測驗
     const answerWaitTime = Math.max(STUDENT_WAIT_TIME - 20, 30) * 1000; // 作答等待時間
 
-    ws.connect(wsUrl, { headers: { 'sticky-id': CONFIG.TEACHER_ID } }, socket => {
+    ws.connect(wsUrl, { headers: getWsHeaders(CONFIG.TEACHER_ID) }, socket => {
         const wsStart = Date.now();
 
         socket.on('open', () => {

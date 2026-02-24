@@ -20,6 +20,7 @@ import {
   CONFIG,
   getTeacherWsUrl,
   getStudentWsUrl,
+  getWsHeaders,
 } from "../lib/config";
 
 import {
@@ -139,7 +140,7 @@ function studentBehavior(
   let connectionSuccess = false; // 追蹤連線是否成功
   const joinTime = Date.now();
 
-  ws.connect(wsUrl, { headers: { 'sticky-id': deviceId } }, (socket) => {
+  ws.connect(wsUrl, { headers: getWsHeaders(deviceId) }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {
@@ -262,7 +263,7 @@ function studentBehavior(
     });
 
     socket.on("error", (e: Error) => {
-      console.error(`[Room ${roomId}] Student ${studentNum} WS error: ${e}`);
+      console.error(`[Room ${roomId}] Student ${studentNum} WS error: ${e.message || e}`);
       wsConnection.error.add(1);
       errors.add(1);
       // 注意：不在這裡調用 studentConnected.add(0)
@@ -382,7 +383,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
     }s`
   );
 
-  ws.connect(wsUrl, { headers: { 'sticky-id': CONFIG.TEACHER_ID } }, (socket) => {
+  ws.connect(wsUrl, { headers: getWsHeaders(CONFIG.TEACHER_ID) }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {
@@ -393,6 +394,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
     });
 
     socket.on("close", () => {
+      console.log(`[Room ${roomId}] Teacher WS closed`);
       wsConnection.disconnected.add(1);
     });
 
@@ -489,7 +491,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
     });
 
     socket.on("error", (e: Error) => {
-      console.error(`[Room ${roomId}] Teacher WS error: ${e}`);
+      console.error(`[Room ${roomId}] Teacher WS error: ${e.message || e}`);
       errors.add(1);
       wsConnection.error.add(1);
       teacherConnected.add(0);
