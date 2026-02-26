@@ -2,7 +2,7 @@
  * K6 Metrics 定義
  */
 
-import { Counter, Trend, Rate } from "k6/metrics";
+import { Counter, Trend, Rate, Gauge } from "k6/metrics";
 
 // === 核心指標 ===
 export const studentConnected = new Rate("student_connected");
@@ -20,6 +20,18 @@ export const timeToSeat = new Trend("time_to_seat");
 export const wsConnectTime = new Trend("ws_connect_time");
 export const quizReceivedTime = new Trend("quiz_received_time");
 export const wsConnectionDuration = new Trend("ws_connection_duration");
+
+// === Event Delivery 指標 ===
+// 老師/學生行為的絕對時間戳 (epoch ms)
+// Grafana 用 spread() 計算 max(接收方) - min(發送方) = delivery time
+export const deliveryTs = {
+  quizCreated: new Gauge("delivery_quiz_created"),       // 老師出題 → 學生收到
+  quizFinished: new Gauge("delivery_quiz_finished"),     // 老師結束測驗 → 學生收到
+  quizDisclosed: new Gauge("delivery_quiz_disclosed"),   // 老師公布答案 → 學生收到
+  quizClosed: new Gauge("delivery_quiz_closed"),         // 老師關閉測驗 → 學生收到
+  studentSubmitted: new Gauge("delivery_student_submitted"), // 學生提交 → 老師收到
+  lessonEnd: new Gauge("delivery_lesson_end"),           // 老師結束課 → 學生收到
+} as const;
 
 // === WebSocket Timing Metrics (自訂) ===
 // 注意: ws_connecting, ws_session_duration, ws_sessions, ws_msgs_received, ws_msgs_sent
@@ -48,9 +60,6 @@ export const wsConnection = {
   joinLessonSent: new Counter("ws_join_lesson_sent"),
   teacherJoinLessonSent: new Counter("ws_teacher_join_lesson_sent"),
   seatChosen: new Counter("ws_seat_chosen"),
-  // 重連相關
-  retryAttempts: new Counter("ws_retry_attempts"),
-  retrySuccess: new Counter("ws_retry_success"),
 } as const;
 
 // === HTTP 錯誤計數 ===

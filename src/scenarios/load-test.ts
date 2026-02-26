@@ -49,6 +49,7 @@ import {
   wsConnectionDuration,
   wsEvents,
   wsConnection,
+  deliveryTs,
 } from "../lib/metrics";
 
 import { NAMESPACE, TEACHER_NAMESPACE, encodeEvent, parseMessage, uuid } from "../lib/socketio";
@@ -154,6 +155,7 @@ function studentBehavior(
 ): void {
   const deviceId = uuid();
   const wsUrl = getStudentWsUrl();
+  const tags = { room: roomId, student: String(studentNum) };
 
   let studentId: string | null = null;
   let socketToken: string | null = null;
@@ -166,29 +168,31 @@ function studentBehavior(
   let lessonEnded = false; // 收到 end_lesson 事件
   let timedOut = false; // 超時主動斷線
   let hasError = false; // 發生錯誤
+  let connectionSuccess = false; // 連線是否成功建立
 
   ws.connect(wsUrl, { headers: getWsHeaders(deviceId) }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {
+      connectionSuccess = true;
       const connectTime = Date.now() - wsStart;
-      wsConnectTime.add(connectTime);
-      wsConnectingTime.add(connectTime);
-      wsConnection.connected.add(1);
-      studentConnected.add(1);
+      wsConnectTime.add(connectTime, tags);
+      wsConnectingTime.add(connectTime, tags);
+      wsConnection.connected.add(1, tags);
+      studentConnected.add(1, tags);
     });
 
     socket.on("close", () => {
       const duration = Date.now() - wsStart;
-      wsConnectionDuration.add(duration);
+      wsConnectionDuration.add(duration, tags);
 
       // 判斷斷線類型
       if (lessonEnded || timedOut) {
         // 正常斷線：課程結束或超時
-        wsConnection.disconnected.add(1);
+        wsConnection.disconnected.add(1, tags);
       } else if (!hasError) {
         // 非預期斷線：不是課程結束、不是超時、也沒有錯誤
-        wsConnection.unexpectedClose.add(1);
+        wsConnection.unexpectedClose.add(1, tags);
         console.warn(
           `[Room ${roomId}] Student ${studentNum}: Unexpected disconnect after ${Math.round(
             duration / 1000
@@ -214,7 +218,7 @@ function studentBehavior(
         case "connect":
           if (parsed.namespace === NAMESPACE) {
             nsSid = (parsed.data?.sid as string) || null;
-            wsConnection.namespaceConnected.add(1);
+            wsConnection.namespaceConnected.add(1, tags);
 
             const seatStart = Date.now();
             const seat = chooseSeat(
@@ -228,11 +232,11 @@ function studentBehavior(
             if (seat) {
               studentId = seat.studentId;
               socketToken = seat.token;
-              studentSeated.add(1);
+              studentSeated.add(1, tags);
 
               const totalTimeToSeat = Date.now() - startTimestamp;
-              timeToSeat.add(totalTimeToSeat);
-              seatWithin3s.add(seatDuration <= 3000 ? 1 : 0);
+              timeToSeat.add(totalTimeToSeat, tags);
+              seatWithin3s.add(seatDuration <= 3000 ? 1 : 0, tags);
 
               if (seatDuration > 3000) {
                 console.warn(
@@ -248,13 +252,13 @@ function studentBehavior(
                   access_token: socketToken,
                 })
               );
-              wsConnection.joinLessonSent.add(1);
+              wsConnection.joinLessonSent.add(1, tags);
               console.log(
                 `[Room ${roomId}] Student ${studentNum}: Joined, waiting for quizzes...`
               );
             } else {
-              studentSeated.add(0);
-              seatWithin3s.add(0);
+              studentSeated.add(0, tags);
+              seatWithin3s.add(0, tags);
             }
           }
           break;
@@ -264,7 +268,7 @@ function studentBehavior(
 
           switch (parsed.event) {
             case "batch_quizzes_created": {
-              wsEvents.quizCreated.add(1);
+              wsEvents.quizCreated.add(1, tags);
               const eventData = parsed.data as unknown as QuizCreatedEvent;
               const batchId = eventData?.batch_quizzes_id;
 
@@ -272,11 +276,12 @@ function studentBehavior(
               if (batchId && batchId !== lastBatchId) {
                 lastBatchId = batchId;
                 quizCount++;
-                eventsReceived.add(1);
+                eventsReceived.add(1, tags);
 
                 if (quizCount === 1) {
-                  quizReceivedTime.add(Date.now() - joinTime);
+                  quizReceivedTime.add(Date.now() - joinTime, tags);
                 }
+                deliveryTs.quizCreated.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
 
                 console.log(
                   `[Room ${roomId}] Student ${studentNum}: Quiz #${quizCount} received`
@@ -288,8 +293,9 @@ function studentBehavior(
                 const quiz = fetchQuiz(lessonId, studentId);
                 if (quiz) {
                   const submitted = submitAnswers(batchId, studentId, quiz);
-                  answersSubmitted.add(submitted ? 1 : 0);
+                  answersSubmitted.add(submitted ? 1 : 0, tags);
                   if (submitted) {
+                    deliveryTs.studentSubmitted.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
                     console.log(
                       `[Room ${roomId}] Student ${studentNum}: Quiz #${quizCount} submitted`
                     );
@@ -299,19 +305,23 @@ function studentBehavior(
               break;
             }
             case "batch_quizzes_finished":
-              wsEvents.quizFinished.add(1);
+              wsEvents.quizFinished.add(1, tags);
+              deliveryTs.quizFinished.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               break;
             case "batch_quizzes_disclosed":
-              wsEvents.quizDisclosed.add(1);
+              wsEvents.quizDisclosed.add(1, tags);
+              deliveryTs.quizDisclosed.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               break;
             case "batch_quizzes_closed":
-              wsEvents.quizClosed.add(1);
+              wsEvents.quizClosed.add(1, tags);
+              deliveryTs.quizClosed.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               break;
             case "student_points_updated":
-              wsEvents.studentPoints.add(1);
+              wsEvents.studentPoints.add(1, tags);
               break;
             case "end_lesson":
-              wsEvents.endLesson.add(1);
+              wsEvents.endLesson.add(1, tags);
+              deliveryTs.lessonEnd.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               lessonEnded = true;
               console.log(
                 `[Room ${roomId}] Student ${studentNum}: Lesson ended, quizzes: ${quizCount}`
@@ -326,16 +336,18 @@ function studentBehavior(
     socket.on("error", (e) => {
       hasError = true;
       console.error(`[Room ${roomId}] Student ${studentNum}: WS Error - ${e}`);
-      wsConnection.error.add(1);
-      errors.add(1);
-      studentConnected.add(0);
+      wsConnection.error.add(1, tags);
+      errors.add(1, tags);
+      if (!connectionSuccess) {
+        studentConnected.add(0, tags);
+      }
     });
 
     // 設置超時（課程時長 + 緩衝）
     const timeout = LESSON_DURATION_MS + 120000;
     socket.setTimeout(() => {
       timedOut = true;
-      if (quizCount === 0) eventsReceived.add(0);
+      if (quizCount === 0) eventsReceived.add(0, tags);
       console.log(
         `[Room ${roomId}] Student ${studentNum}: Timeout after ${
           LESSON_DURATION + 2
@@ -357,15 +369,18 @@ function teacherBehavior(roomId: string, lessonId: string): void {
   let namespaceConnected = false;
   const quizBatchIds: string[] = [];
   const submittedCounts: number[] = [];
+  let totalSubmitted = 0;
 
   // 斷線原因追蹤
   let lessonFinished = false; // 正常完成課程
   let hasError = false; // 發生錯誤
+  let connectionSuccess = false; // 連線是否成功建立
 
   ws.connect(wsUrl, { headers: getWsHeaders(CONFIG.TEACHER_ID) }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {
+      connectionSuccess = true;
       const connectTime = Date.now() - wsStart;
       wsConnectingTime.add(connectTime);
       teacherConnected.add(1);
@@ -435,7 +450,9 @@ function teacherBehavior(roomId: string, lessonId: string): void {
               submittedCounts[currentQuiz - 1] =
                 (submittedCounts[currentQuiz - 1] || 0) + 1;
             }
-            wsEvents.studentSubmitted.add(1);
+            totalSubmitted++;
+            wsEvents.studentSubmitted.add(1, { room: roomId, student: String(totalSubmitted) });
+            deliveryTs.studentSubmitted.add(Date.now(), { room: roomId, role: "teacher", student: String(totalSubmitted) });
           }
           break;
       }
@@ -446,7 +463,9 @@ function teacherBehavior(roomId: string, lessonId: string): void {
       console.error(`[Room ${roomId}] Teacher: WS Error - ${e}`);
       errors.add(1);
       wsConnection.error.add(1);
-      teacherConnected.add(0);
+      if (!connectionSuccess) {
+        teacherConnected.add(0);
+      }
     });
 
     // 發送測驗的遞迴函數
@@ -469,6 +488,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
         group("teacher_create_quiz", () => {
           const batchId = createQuizzes(lessonId);
           if (batchId) {
+            deliveryTs.quizCreated.add(Date.now(), { room: roomId, role: "teacher" });
             quizBatchIds.push(batchId);
             submittedCounts.push(0);
             console.log(
@@ -484,10 +504,13 @@ function teacherBehavior(roomId: string, lessonId: string): void {
 
               group("teacher_finish_quiz", () => {
                 finishQuiz(lessonId, batchId);
+                deliveryTs.quizFinished.add(Date.now(), { room: roomId, role: "teacher" });
                 sleep(0.5);
                 discloseQuiz(lessonId, batchId);
+                deliveryTs.quizDisclosed.add(Date.now(), { room: roomId, role: "teacher" });
                 sleep(0.5);
                 closeQuiz(lessonId, batchId);
+                deliveryTs.quizClosed.add(Date.now(), { room: roomId, role: "teacher" });
               });
 
               console.log(
@@ -527,6 +550,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
 
       group("teacher_end_lesson", () => {
         endLesson(lId);
+        deliveryTs.lessonEnd.add(Date.now(), { room: roomId, role: "teacher" });
         console.log(`[Room ${roomId}] Teacher: Lesson ended`);
       });
 
@@ -587,7 +611,7 @@ export function loadTestScenario(data: SetupData): void {
 
 // === Teardown ===
 export function teardown(data: SetupData): void {
-  sleep(2);
+  sleep(6); // Wait for InfluxDB final flush
   const roomCount = data.roomIds?.length || NUM_ROOMS;
   console.log("=".repeat(70));
   console.log("LOAD TEST COMPLETED");

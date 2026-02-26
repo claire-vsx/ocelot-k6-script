@@ -29,6 +29,7 @@ import {
     wsConnectionDuration,
     wsEvents,
     wsConnection,
+    deliveryTs,
 } from '../lib/metrics';
 
 import { NAMESPACE, TEACHER_NAMESPACE, encodeEvent, parseMessage, uuid } from '../lib/socketio';
@@ -127,26 +128,29 @@ export function studentScenario(data: SetupData): void {
     console.log(`Student ${studentNum}: Starting...`);
 
     const wsUrl = getStudentWsUrl();
+    const tags = { student: String(studentNum) };
     let studentId: string | null = null;
     let socketToken: string | null = null;
     let nsSid: string | null = null;
     let quizReceived = false;
+    let connectionSuccess = false;
     const joinTime = Date.now();
 
     ws.connect(wsUrl, { headers: getWsHeaders(deviceId) }, socket => {
         const wsStart = Date.now();
 
         socket.on('open', () => {
+            connectionSuccess = true;
             const connectTime = Date.now() - wsStart;
-            wsConnectTime.add(connectTime);
-            wsConnectingTime.add(connectTime);
-            studentConnected.add(1);
-            wsConnection.connected.add(1);
+            wsConnectTime.add(connectTime, tags);
+            wsConnectingTime.add(connectTime, tags);
+            studentConnected.add(1, tags);
+            wsConnection.connected.add(1, tags);
         });
 
         socket.on('close', () => {
-            wsConnectionDuration.add(Date.now() - wsStart);
-            (quizReceived ? wsConnection.disconnected : wsConnection.unexpectedClose).add(1);
+            wsConnectionDuration.add(Date.now() - wsStart, tags);
+            (quizReceived ? wsConnection.disconnected : wsConnection.unexpectedClose).add(1, tags);
         });
 
         socket.on('message', (msg: string) => {
@@ -165,7 +169,7 @@ export function studentScenario(data: SetupData): void {
                 case 'connect':
                     if (parsed.namespace === NAMESPACE) {
                         nsSid = (parsed.data?.sid as string) || null;
-                        wsConnection.namespaceConnected.add(1);
+                        wsConnection.namespaceConnected.add(1, tags);
 
                         const seatStart = Date.now();
                         const seat = chooseSeat(lessonId, studentNum, nsSid || '', deviceId);
@@ -173,11 +177,11 @@ export function studentScenario(data: SetupData): void {
                         if (seat) {
                             studentId = seat.studentId;
                             socketToken = seat.token;
-                            studentSeated.add(1);
+                            studentSeated.add(1, tags);
 
                             const totalTimeToSeat = Date.now() - startTimestamp;
-                            timeToSeat.add(totalTimeToSeat);
-                            seatWithin3s.add(seatDuration <= 3000 ? 1 : 0);
+                            timeToSeat.add(totalTimeToSeat, tags);
+                            seatWithin3s.add(seatDuration <= 3000 ? 1 : 0, tags);
 
                             if (seatDuration > 3000) {
                                 console.warn(`Student ${studentNum}: ${seatDuration}ms to seat (>3s)`);
@@ -189,10 +193,10 @@ export function studentScenario(data: SetupData): void {
                                 role: 'student',
                                 access_token: socketToken,
                             }));
-                            wsConnection.joinLessonSent.add(1);
+                            wsConnection.joinLessonSent.add(1, tags);
                         } else {
-                            studentSeated.add(0);
-                            seatWithin3s.add(0);
+                            studentSeated.add(0, tags);
+                            seatWithin3s.add(0, tags);
                         }
                     }
                     break;
@@ -202,11 +206,12 @@ export function studentScenario(data: SetupData): void {
 
                     switch (parsed.event) {
                         case 'batch_quizzes_created': {
-                            wsEvents.quizCreated.add(1);
+                            wsEvents.quizCreated.add(1, tags);
                             if (!quizReceived) {
                                 quizReceived = true;
-                                eventsReceived.add(1);
-                                quizReceivedTime.add(Date.now() - joinTime);
+                                eventsReceived.add(1, tags);
+                                quizReceivedTime.add(Date.now() - joinTime, tags);
+                                deliveryTs.quizCreated.add(Date.now(), { role: 'student', student: String(studentNum) });
 
                                 const eventData = parsed.data as QuizCreatedEvent;
                                 const batchId = eventData?.batch_quizzes_id;
@@ -214,25 +219,33 @@ export function studentScenario(data: SetupData): void {
 
                                 const quiz = fetchQuiz(lessonId, studentId);
                                 if (quiz && batchId) {
-                                    answersSubmitted.add(submitAnswers(batchId, studentId, quiz) ? 1 : 0);
+                                    const submitted = submitAnswers(batchId, studentId, quiz);
+                                    answersSubmitted.add(submitted ? 1 : 0, tags);
+                                    if (submitted) {
+                                        deliveryTs.studentSubmitted.add(Date.now(), { role: 'student', student: String(studentNum) });
+                                    }
                                 }
                             }
                             break;
                         }
                         case 'batch_quizzes_finished':
-                            wsEvents.quizFinished.add(1);
+                            wsEvents.quizFinished.add(1, tags);
+                            deliveryTs.quizFinished.add(Date.now(), { role: 'student', student: String(studentNum) });
                             break;
                         case 'batch_quizzes_disclosed':
-                            wsEvents.quizDisclosed.add(1);
+                            wsEvents.quizDisclosed.add(1, tags);
+                            deliveryTs.quizDisclosed.add(Date.now(), { role: 'student', student: String(studentNum) });
                             break;
                         case 'batch_quizzes_closed':
-                            wsEvents.quizClosed.add(1);
+                            wsEvents.quizClosed.add(1, tags);
+                            deliveryTs.quizClosed.add(Date.now(), { role: 'student', student: String(studentNum) });
                             break;
                         case 'student_points_updated':
-                            wsEvents.studentPoints.add(1);
+                            wsEvents.studentPoints.add(1, tags);
                             break;
                         case 'end_lesson':
-                            wsEvents.endLesson.add(1);
+                            wsEvents.endLesson.add(1, tags);
+                            deliveryTs.lessonEnd.add(Date.now(), { role: 'student', student: String(studentNum) });
                             socket.close();
                             break;
                     }
@@ -242,13 +255,15 @@ export function studentScenario(data: SetupData): void {
 
         socket.on('error', (e: Error) => {
             console.error(`Student ${studentNum}: WS Error - ${e}`);
-            errors.add(1);
-            wsConnection.error.add(1);
-            studentConnected.add(0);
+            errors.add(1, tags);
+            wsConnection.error.add(1, tags);
+            if (!connectionSuccess) {
+                studentConnected.add(0, tags);
+            }
         });
 
         socket.setTimeout(() => {
-            if (!quizReceived) eventsReceived.add(0);
+            if (!quizReceived) eventsReceived.add(0, tags);
             socket.close();
         }, STUDENT_WAIT_TIME * 1000);
     });
@@ -267,6 +282,7 @@ export function teacherScenario(data: SetupData): void {
     let submittedCount = 0;
     let quizCreated = false;
     let namespaceConnected = false;
+    let connectionSuccess = false;
 
     // 時間配置
     const quizCreateDelay = 2 * 1000; // 2s 後創建測驗
@@ -276,6 +292,7 @@ export function teacherScenario(data: SetupData): void {
         const wsStart = Date.now();
 
         socket.on('open', () => {
+            connectionSuccess = true;
             const connectTime = Date.now() - wsStart;
             wsConnectingTime.add(connectTime);
             teacherConnected.add(1);
@@ -323,6 +340,7 @@ export function teacherScenario(data: SetupData): void {
                                 batchId = createQuizzes(lessonId);
                                 quizCreated = !!batchId;
                                 if (batchId) {
+                                    deliveryTs.quizCreated.add(Date.now(), { role: 'teacher' });
                                     console.log(`TEACHER: Quiz created, batchId=${batchId}`);
                                 }
                             });
@@ -334,19 +352,24 @@ export function teacherScenario(data: SetupData): void {
                                 group('teacher_finish', () => {
                                     if (quizCreated && batchId) {
                                         finishQuiz(lessonId, batchId);
+                                        deliveryTs.quizFinished.add(Date.now(), { role: 'teacher' });
                                         console.log('TEACHER: Quiz finished');
                                         sleep(1);
                                         discloseQuiz(lessonId, batchId);
+                                        deliveryTs.quizDisclosed.add(Date.now(), { role: 'teacher' });
                                         console.log('TEACHER: Quiz disclosed');
                                         sleep(1);
                                         closeQuiz(lessonId, batchId);
+                                        deliveryTs.quizClosed.add(Date.now(), { role: 'teacher' });
                                         console.log('TEACHER: Quiz closed');
                                         sleep(1);
                                     }
                                     endLesson(lessonId);
+                                    deliveryTs.lessonEnd.add(Date.now(), { role: 'teacher' });
                                     console.log('TEACHER: Lesson ended');
                                 });
 
+                                sleep(2);
                                 socket.close();
                             }, answerWaitTime);
                         }, quizCreateDelay);
@@ -356,7 +379,8 @@ export function teacherScenario(data: SetupData): void {
                 case 'event':
                     if (parsed.namespace === TEACHER_NAMESPACE && parsed.event === 'batch_quizzes_student_submitted') {
                         submittedCount++;
-                        wsEvents.studentSubmitted.add(1);
+                        wsEvents.studentSubmitted.add(1, { student: String(submittedCount) });
+                        deliveryTs.studentSubmitted.add(Date.now(), { role: 'teacher', student: String(submittedCount) });
                     }
                     break;
             }
@@ -366,14 +390,16 @@ export function teacherScenario(data: SetupData): void {
             console.error(`TEACHER: WS Error - ${e}`);
             errors.add(1);
             wsConnection.error.add(1);
-            teacherConnected.add(0);
+            if (!connectionSuccess) {
+                teacherConnected.add(0);
+            }
         });
     });
 }
 
 // === Teardown ===
 export function teardown(data: SetupData): void {
-    sleep(2);
+    sleep(6); // Wait for InfluxDB final flush
     console.log('='.repeat(60));
     console.log(`TEST COMPLETED | Lesson: ${data.lessonId}`);
     console.log('='.repeat(60));

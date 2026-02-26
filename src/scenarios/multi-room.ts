@@ -38,6 +38,7 @@ import {
   wsConnectingTime,
   wsEvents,
   wsConnection,
+  deliveryTs,
 } from "../lib/metrics";
 
 import {
@@ -122,13 +123,12 @@ export function setup(): SetupData {
 }
 
 // === Student Behavior ===
-// 返回 true 表示成功連線並完成流程，false 表示連線失敗需要重試
 function studentBehavior(
   roomId: string,
   lessonId: string,
   studentNum: number,
   startTimestamp: number
-): boolean {
+): void {
   const deviceId = uuid();
   const wsUrl = getStudentWsUrl();
 
@@ -137,27 +137,30 @@ function studentBehavior(
   let nsSid: string | null = null;
   let currentBatchId: string | null = null;
   let quizReceived = false;
-  let connectionSuccess = false; // 追蹤連線是否成功
+  let connectionSuccess = false;
   const joinTime = Date.now();
+
+  const tags = { room: roomId, student: String(studentNum) };
 
   ws.connect(wsUrl, { headers: getWsHeaders(deviceId) }, (socket) => {
     const wsStart = Date.now();
 
     socket.on("open", () => {
+      connectionSuccess = true;
       const connectTime = Date.now() - wsStart;
-      wsConnectTime.add(connectTime);
-      wsConnectingTime.add(connectTime);
-      wsConnection.connected.add(1);
-      connectionSuccess = true; // 標記連線成功
+      wsConnectTime.add(connectTime, tags);
+      wsConnectingTime.add(connectTime, tags);
+      wsConnection.connected.add(1, tags);
+      studentConnected.add(1, tags);
     });
 
     socket.on("close", () => {
       const duration = Date.now() - wsStart;
-      wsConnectionDuration.add(duration);
+      wsConnectionDuration.add(duration, tags);
       (quizReceived
         ? wsConnection.disconnected
         : wsConnection.unexpectedClose
-      ).add(1);
+      ).add(1, tags);
     });
 
     socket.on("message", (msg: string) => {
@@ -176,7 +179,7 @@ function studentBehavior(
         case "connect":
           if (parsed.namespace === NAMESPACE) {
             nsSid = (parsed.data?.sid as string) || null;
-            wsConnection.namespaceConnected.add(1);
+            wsConnection.namespaceConnected.add(1, tags);
 
             const seatStart = Date.now();
             const seat = chooseSeat(
@@ -190,11 +193,11 @@ function studentBehavior(
             if (seat) {
               studentId = seat.studentId;
               socketToken = seat.token;
-              studentSeated.add(1);
+              studentSeated.add(1, tags);
 
               const totalTimeToSeat = Date.now() - startTimestamp;
-              timeToSeat.add(totalTimeToSeat);
-              seatWithin3s.add(seatDuration <= 3000 ? 1 : 0);
+              timeToSeat.add(totalTimeToSeat, tags);
+              seatWithin3s.add(seatDuration <= 3000 ? 1 : 0, tags);
 
               if (seatDuration > 3000) {
                 console.warn(
@@ -210,10 +213,10 @@ function studentBehavior(
                   access_token: socketToken,
                 })
               );
-              wsConnection.joinLessonSent.add(1);
+              wsConnection.joinLessonSent.add(1, tags);
             } else {
-              studentSeated.add(0);
-              seatWithin3s.add(0);
+              studentSeated.add(0, tags);
+              seatWithin3s.add(0, tags);
             }
           }
           break;
@@ -223,40 +226,47 @@ function studentBehavior(
 
           switch (parsed.event) {
             case "batch_quizzes_created": {
-              wsEvents.quizCreated.add(1);
+              wsEvents.quizCreated.add(1, tags);
               const eventData = parsed.data as QuizCreatedEvent;
               const batchId = eventData?.batch_quizzes_id;
               if (batchId && batchId !== currentBatchId) {
                 currentBatchId = batchId;
                 quizReceived = true;
-                eventsReceived.add(1);
-                quizReceivedTime.add(Date.now() - joinTime);
+                eventsReceived.add(1, tags);
+                quizReceivedTime.add(Date.now() - joinTime, tags);
+                deliveryTs.quizCreated.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
 
                 sleep(0.5 + Math.random());
 
                 const quiz = fetchQuiz(lessonId, studentId);
                 if (quiz) {
-                  answersSubmitted.add(
-                    submitAnswers(batchId, studentId, quiz) ? 1 : 0
-                  );
+                  const submitted = submitAnswers(batchId, studentId, quiz);
+                  answersSubmitted.add(submitted ? 1 : 0, tags);
+                  if (submitted) {
+                    deliveryTs.studentSubmitted.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
+                  }
                 }
               }
               break;
             }
             case "batch_quizzes_finished":
-              wsEvents.quizFinished.add(1);
+              wsEvents.quizFinished.add(1, tags);
+              deliveryTs.quizFinished.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               break;
             case "batch_quizzes_disclosed":
-              wsEvents.quizDisclosed.add(1);
+              wsEvents.quizDisclosed.add(1, tags);
+              deliveryTs.quizDisclosed.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               break;
             case "batch_quizzes_closed":
-              wsEvents.quizClosed.add(1);
+              wsEvents.quizClosed.add(1, tags);
+              deliveryTs.quizClosed.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               break;
             case "student_points_updated":
-              wsEvents.studentPoints.add(1);
+              wsEvents.studentPoints.add(1, tags);
               break;
             case "end_lesson":
-              wsEvents.endLesson.add(1);
+              wsEvents.endLesson.add(1, tags);
+              deliveryTs.lessonEnd.add(Date.now(), { room: roomId, role: "student", student: String(studentNum) });
               socket.close();
               break;
           }
@@ -266,11 +276,11 @@ function studentBehavior(
 
     socket.on("error", (e: Error) => {
       console.error(`[Room ${roomId}] Student ${studentNum} WS error: ${e.message || e}`);
-      wsConnection.error.add(1);
-      errors.add(1);
-      // 注意：不在這裡調用 studentConnected.add(0)
-      // 因為 error 事件可能多次觸發，會導致 Rate 分母錯誤
-      // 連線失敗的記錄在 ws.connect 外部處理
+      wsConnection.error.add(1, tags);
+      errors.add(1, tags);
+      if (!connectionSuccess) {
+        studentConnected.add(0, tags);
+      }
     });
 
     // 動態計算學生 timeout：確保有足夠時間等待 Quiz
@@ -278,65 +288,10 @@ function studentBehavior(
     const answerWait = calculateAnswerWaitTime() / 1000;
     const timeout = (quizDelay + answerWait + 30) * 1000; // 額外 30 秒緩衝
     socket.setTimeout(() => {
-      if (!quizReceived) eventsReceived.add(0);
+      if (!quizReceived) eventsReceived.add(0, tags);
       socket.close();
     }, timeout);
   });
-
-  return connectionSuccess;
-}
-
-// === Student Behavior with Retry ===
-function studentBehaviorWithRetry(
-  roomId: string,
-  lessonId: string,
-  studentNum: number,
-  startTimestamp: number
-): void {
-  const maxRetries = CONFIG.WS_MAX_RETRIES;
-  const baseDelay = CONFIG.WS_RETRY_DELAY;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    if (attempt > 0) {
-      // 指數退避：2^attempt * baseDelay 秒
-      const delay = Math.pow(2, attempt - 1) * baseDelay;
-      console.warn(
-        `[Room ${roomId}] Student ${studentNum}: Retry ${attempt}/${maxRetries} after ${delay}s`
-      );
-      wsConnection.retryAttempts.add(1);
-      sleep(delay);
-    }
-
-    const success = studentBehavior(
-      roomId,
-      lessonId,
-      studentNum,
-      startTimestamp
-    );
-
-    if (success) {
-      if (attempt > 0) {
-        wsConnection.retrySuccess.add(1);
-        console.log(
-          `[Room ${roomId}] Student ${studentNum}: Reconnected on attempt ${
-            attempt + 1
-          }`
-        );
-      }
-      studentConnected.add(1);
-      return;
-    }
-  }
-
-  // 所有重試都失敗
-  console.error(
-    `[Room ${roomId}] Student ${studentNum}: All ${
-      maxRetries + 1
-    } connection attempts failed`
-  );
-  studentConnected.add(0);
-  studentSeated.add(0);
-  seatWithin3s.add(0);
 }
 
 // === 動態時間計算 ===
@@ -375,6 +330,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
   let submittedCount = 0;
   let quizCreated = false;
   let namespaceConnected = false;
+  let connectionSuccess = false;
 
   // 動態時間配置
   const quizCreateDelay = calculateQuizCreateDelay();
@@ -389,6 +345,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
     const wsStart = Date.now();
 
     socket.on("open", () => {
+      connectionSuccess = true;
       const connectTime = Date.now() - wsStart;
       wsConnectingTime.add(connectTime);
       teacherConnected.add(1);
@@ -444,6 +401,7 @@ function teacherBehavior(roomId: string, lessonId: string): void {
                 batchId = createQuizzes(lessonId);
                 quizCreated = !!batchId;
                 if (batchId) {
+                  deliveryTs.quizCreated.add(Date.now(), { room: roomId, role: "teacher" });
                   console.log(`[Room ${roomId}] Quiz created: ${batchId}`);
                 }
               });
@@ -458,19 +416,24 @@ function teacherBehavior(roomId: string, lessonId: string): void {
                 group("teacher_finish", () => {
                   if (quizCreated && batchId) {
                     finishQuiz(lessonId, batchId);
+                    deliveryTs.quizFinished.add(Date.now(), { room: roomId, role: "teacher" });
                     console.log(`[Room ${roomId}] Quiz finished`);
                     sleep(1);
                     discloseQuiz(lessonId, batchId);
+                    deliveryTs.quizDisclosed.add(Date.now(), { room: roomId, role: "teacher" });
                     console.log(`[Room ${roomId}] Quiz disclosed`);
                     sleep(1);
                     closeQuiz(lessonId, batchId);
+                    deliveryTs.quizClosed.add(Date.now(), { room: roomId, role: "teacher" });
                     console.log(`[Room ${roomId}] Quiz closed`);
                     sleep(1);
                   }
                   endLesson(lessonId);
+                  deliveryTs.lessonEnd.add(Date.now(), { room: roomId, role: "teacher" });
                   console.log(`[Room ${roomId}] Lesson ended`);
                 });
 
+                sleep(2);
                 socket.close();
               }, answerWaitTime);
             }, quizCreateDelay);
@@ -483,7 +446,8 @@ function teacherBehavior(roomId: string, lessonId: string): void {
             parsed.event === "batch_quizzes_student_submitted"
           ) {
             submittedCount++;
-            wsEvents.studentSubmitted.add(1);
+            wsEvents.studentSubmitted.add(1, { room: roomId, student: String(submittedCount) });
+            deliveryTs.studentSubmitted.add(Date.now(), { room: roomId, role: "teacher", student: String(submittedCount) });
             console.log(
               `[Room ${roomId}] Student submitted (${submittedCount}/${STUDENTS_PER_ROOM})`
             );
@@ -496,7 +460,9 @@ function teacherBehavior(roomId: string, lessonId: string): void {
       console.error(`[Room ${roomId}] Teacher WS error: ${e.message || e}`);
       errors.add(1);
       wsConnection.error.add(1);
-      teacherConnected.add(0);
+      if (!connectionSuccess) {
+        teacherConnected.add(0);
+      }
     });
   });
 }
@@ -543,14 +509,13 @@ export function multiRoomScenario(data: SetupData): void {
       return;
     }
 
-    // 使用帶重連機制的版本
-    studentBehaviorWithRetry(roomId, lessonId, positionInRoom, startTimestamp);
+    studentBehavior(roomId, lessonId, positionInRoom, startTimestamp);
   }
 }
 
 // === Teardown ===
 export function teardown(data: SetupData): void {
-  sleep(2);
+  sleep(6); // Wait for InfluxDB final flush
   const roomCount = data.roomIds?.length || NUM_ROOMS;
   console.log("=".repeat(70));
   console.log(

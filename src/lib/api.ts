@@ -189,9 +189,12 @@ export function chooseSeat(
         r.status === 200 || r.status === 201,
     })
   ) {
-    httpSuccess.chooseSeat.add(1);
-    roomStudentsSeated.add(1);
-    wsConnection.seatChosen.add(1);
+    const metricTags = roomId
+      ? { room: roomId, student: String(serialNumber) }
+      : { student: String(serialNumber) };
+    httpSuccess.chooseSeat.add(1, metricTags);
+    roomStudentsSeated.add(1, metricTags);
+    wsConnection.seatChosen.add(1, metricTags);
     const data = res.json() as { student_id: string; socket_token: string };
     return { studentId: data.student_id, token: data.socket_token };
   }
