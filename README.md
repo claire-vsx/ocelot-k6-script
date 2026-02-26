@@ -22,7 +22,9 @@ ocelot-k6-script/
 ├── monitoring/                 # 監控配置
 │   ├── docker-compose.yml     # Prometheus + Grafana
 │   ├── prometheus.yml         # Prometheus 設定
-│   ├── k6-prometheus-dashboard.json  # Grafana Dashboard
+│   ├── k6-influxdb-dashboard.json    # Grafana Dashboard (InfluxDB)
+│   ├── k6-prometheus-dashboard.json  # Grafana Dashboard (Prometheus)
+│   ├── DASHBOARD_FIELDS.md    # Dashboard 欄位說明
 │   └── provisioning/          # Grafana 自動配置
 │       ├── dashboards/
 │       └── datasources/
@@ -109,8 +111,10 @@ NUM_ROOMS=2 TEACHER_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-room.js
 # 直接指定環境變數
 NUM_ROOMS=4 TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/multi-room.js
 
-# 使用 .env.local 輸出到 Prometheus
-source .env.local && k6 run --out experimental-prometheus-rw dist/multi-room.js
+# 使用 .env.local 輸出到 InfluxDB
+source .env.local && pnpm test:multi-room:influxdb
+# 或手動執行
+source .env.local && k6 run --out influxdb=${K6_INFLUXDB_ADDR}/k6 dist/multi-room.js
 ```
 
 ### Specified-One-Room (指定教室測試)
@@ -140,8 +144,8 @@ source .env.local && k6 run --out experimental-prometheus-rw dist/multi-room.js
 # 直接指定環境變數
 ROOM_ID=xxx TEACHER_TOKEN=xxx TEACHER_WS_TOKEN=xxx ORG_ID=xxx k6 run dist/specified-one-room.js
 
-# 使用 .env.local 輸出到 Prometheus
-source .env.local && k6 run --out experimental-prometheus-rw dist/specified-one-room.js
+# 使用 .env.local 輸出到 InfluxDB
+source .env.local && pnpm test:specified-one-room:influxdb
 ```
 
 ### Load-Test (長時間負載測試)
@@ -170,8 +174,8 @@ source .env.local && k6 run --out experimental-prometheus-rw dist/specified-one-
 # 直接指定環境變數（30 分鐘課程，5 次測驗）
 NUM_ROOMS=2 LESSON_DURATION=30 QUIZ_COUNT=5 TEACHER_TOKEN=xxx ORG_ID=xxx k6 run dist/load-test.js
 
-# 使用 .env.local 輸出到 Prometheus
-source .env.local && k6 run --out experimental-prometheus-rw dist/load-test.js
+# 使用 .env.local 輸出到 InfluxDB
+source .env.local && pnpm test:load-test:influxdb
 ```
 
 ### Stress-Test (階梯式壓力測試)
@@ -225,8 +229,8 @@ source .env.local && k6 run dist/stress-test.js
 # 自訂配置
 MAX_VUS=500 STAGES=10 STAGE_DURATION=120s k6 run dist/stress-test.js
 
-# 輸出到 Prometheus
-source .env.local && k6 run --out experimental-prometheus-rw dist/stress-test.js
+# 輸出到 InfluxDB
+source .env.local && pnpm test:stress-test:influxdb
 ```
 
 **專屬指標：**
@@ -342,66 +346,60 @@ pnpm typecheck
 2. 在 `vite.config.ts` 的 `entry` 加入新場景
 3. 執行 `pnpm build`
 
-## 監控 (Prometheus + Grafana)
+## 監控 (InfluxDB + Grafana)
 
-### 1. 啟動監控服務
-
-```bash
-# 使用 pnpm script
-pnpm monitoring:up
-
-# 或手動啟動
-cd monitoring && docker compose up -d
-```
-
-### 2. 執行測試並輸出到 Prometheus
+### 1. 執行測試並輸出到 InfluxDB
 
 ```bash
-# 載入環境變數 (包含 K6_PROMETHEUS_RW_SERVER_URL)
 source .env.local
 
-# 執行測試並輸出到 Prometheus
-pnpm test:multi-room:prometheus
+# 使用 pnpm script（自動 build + 輸出到 InfluxDB）
+pnpm test:multi-room:influxdb
 
 # 或手動執行
-k6 run --out experimental-prometheus-rw dist/multi-room.js
+k6 run --out influxdb=${K6_INFLUXDB_ADDR}/k6 dist/multi-room.js
 ```
 
 **環境變數說明：**
 
-| 變數                                         | 說明                        | 預設值                             |
-| -------------------------------------------- | --------------------------- | ---------------------------------- |
-| `K6_PROMETHEUS_RW_SERVER_URL`                | Prometheus Remote Write URL | http://localhost:9090/api/v1/write |
-| `K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM` | 使用原生直方圖              | true                               |
+| 變數                       | 說明                  | 預設值                  |
+| -------------------------- | --------------------- | ----------------------- |
+| `K6_INFLUXDB_ADDR`         | InfluxDB 地址         | http://localhost:8086   |
+| `K6_INFLUXDB_PUSH_INTERVAL`| 資料推送間隔          | 1s                      |
 
-**Prometheus 原生直方圖說明：**
+> **Push Interval 設為 1s** 是為了避免 InfluxDB 時間戳碰撞。較長的間隔會導致同一秒內多個 VU 的資料被聚合覆蓋。
 
-K6 使用原生直方圖格式輸出 Trend 指標，查詢時需使用 `histogram_quantile()` 函數：
+### 2. 匯入 Grafana Dashboard
 
-```promql
-# 查詢 p95 範例
-histogram_quantile(0.95, sum by (le) (k6_http_req_duration_seconds{name="choose_seat"})) * 1000
+將 `monitoring/k6-influxdb-dashboard.json` 匯入 Grafana，並設定 InfluxDB datasource 指向 `k6` database。
 
-# 查詢自訂 Trend 指標
-histogram_quantile(0.95, sum by (le) (k6_seat_time))
-```
+**Dashboard 架構：**
 
-### 3. 查看 Dashboard
+| Section          | Panel                       | 說明                              |
+| ---------------- | --------------------------- | --------------------------------- |
+| Overview         | 6 個 stat                   | 連線數、選座數、提交數、事件數、錯誤數、HTTP 總數 |
+| Test Flow        | Event Summary (bargauge)    | 所有 WS 事件計數一覽              |
+|                  | Events Over Time (timeseries)| 事件累積曲線                      |
+| Performance      | HTTP Request Duration       | 各 API p95 回應時間               |
+|                  | WS Handshake p95 (stat)     | WebSocket 握手 95 百分位時間      |
+| Event Delivery   | Event Delivery Time (bargauge)| API → WS event 的投遞延遲       |
+| Errors           | HTTP Errors by Status Code  | HTTP 錯誤分佈                     |
 
-- **Grafana**: http://localhost:3000 (admin/admin)
-  - Dashboard 已自動載入：`k6 Load Testing (Prometheus)`
-  - Prometheus datasource 已自動配置
-- **Prometheus**: http://localhost:9090
+### 3. 本地開發監控（Prometheus + Grafana）
 
-### 4. 停止監控服務
+如需在本地使用 Docker 起 Prometheus + Grafana：
 
 ```bash
-pnpm monitoring:down
+pnpm monitoring:up    # 啟動
+pnpm monitoring:down  # 停止
 ```
+
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
 
 ## GitHub Actions CI/CD
 
-支援透過 GitHub Actions 手動觸發測試，結果輸出到 Prometheus。
+支援透過 GitHub Actions 手動觸發測試，結果輸出到 InfluxDB。
 
 ### 使用方式
 
@@ -418,44 +416,17 @@ pnpm monitoring:down
 
 到 repo → **Settings** → **Secrets and variables** → **Actions** 新增：
 
-| Secret                        | 必填 | 說明                        |
-| ----------------------------- | ---- | --------------------------- |
-| `API_URL`                     | ✅   | API URL                     |
-| `SOCKET_URL`                  | ✅   | WebSocket URL               |
-| `TEACHER_TOKEN`               | ✅   | 老師 JWT Token              |
-| `TEACHER_WS_TOKEN`            | ✅   | 老師 WebSocket Token        |
-| `ORG_ID`                      | ✅   | 組織 ID                     |
-| `TEACHER_ID`                  | -    | 老師 ID                     |
-| `ROOM_ID`                     | -    | 教室 ID (specified-one-room)|
-| `COLLECTION_ID`               | ✅   | Quiz Collection ID          |
-| `K6_PROMETHEUS_RW_SERVER_URL` | ✅   | Prometheus Remote Write URL |
-
-### Prometheus Remote Write 設定
-
-**URL 格式：**
-
-```
-https://your-prometheus-domain.com/api/v1/write
-```
-
-**如需 Basic Auth：**
-
-```
-https://user:password@your-prometheus-domain.com/api/v1/write
-```
-
-### Prometheus 設定確認事項
-
-1. **Remote Write 已啟用**
-   - 確認 Prometheus 有開啟 `--web.enable-remote-write-receiver` 或 `--enable-feature=remote-write-receiver`
-
-2. **認證方式**
-   - Basic Auth：將帳密加入 URL
-   - Bearer Token：需額外設定 workflow
-
-3. **防火牆/Ingress**
-   - GitHub Actions IP 範圍需要被允許訪問
-   - 參考：https://api.github.com/meta
+| Secret             | 必填 | 說明                        |
+| ------------------ | ---- | --------------------------- |
+| `API_URL`          | ✅   | API URL                     |
+| `SOCKET_URL`       | ✅   | WebSocket URL               |
+| `TEACHER_TOKEN`    | ✅   | 老師 JWT Token              |
+| `TEACHER_WS_TOKEN` | ✅   | 老師 WebSocket Token        |
+| `ORG_ID`           | ✅   | 組織 ID                     |
+| `TEACHER_ID`       | -    | 老師 ID                     |
+| `ROOM_ID`          | -    | 教室 ID (specified-one-room)|
+| `COLLECTION_ID`    | ✅   | Quiz Collection ID          |
+| `K6_INFLUXDB_ADDR` | ✅   | InfluxDB 地址               |
 
 ## 關鍵指標
 
@@ -503,13 +474,39 @@ https://user:password@your-prometheus-domain.com/api/v1/write
 
 ### WebSocket 連線狀態 (Counter)
 
-| 指標                     | 說明                       |
-| ------------------------ | -------------------------- |
-| `ws_connected`           | WebSocket 連線成功數       |
-| `ws_disconnected`        | WebSocket 正常斷線數       |
-| `ws_unexpected_close`    | WebSocket 非預期斷線數     |
-| `ws_connection_error`    | WebSocket 連線錯誤數       |
-| `ws_namespace_connected` | Socket.IO Namespace 連線數 |
+連線流程依序為：`ws_connected` → `ws_namespace_connected` → `ws_seat_chosen` → `ws_join_lesson_sent`
+
+| 指標                           | 說明                       |
+| ------------------------------ | -------------------------- |
+| `ws_connected`                 | WebSocket TCP 握手成功（底層傳輸層）|
+| `ws_namespace_connected`       | Socket.IO Namespace 加入成功（應用層，server 回 ack）|
+| `ws_seat_chosen`               | 選座 API 成功（拿到 studentId + socketToken） |
+| `ws_join_lesson_sent`          | 學生發送 join_lesson 訊息  |
+| `ws_teacher_join_lesson_sent`  | 老師發送 join_lesson 訊息  |
+| `ws_disconnected`              | WebSocket 正常斷線數       |
+| `ws_unexpected_close`          | WebSocket 非預期斷線數     |
+| `ws_connection_error`          | WebSocket 連線錯誤數       |
+
+> **`ws_connected` vs `ws_namespace_connected`：** `ws_connected` 是 WebSocket TCP 連線建立，`ws_namespace_connected` 是 Socket.IO 應用層 namespace 握手成功。正常情況數字一致。若 `ws_connected > ws_namespace_connected`，代表有 VU 的 WebSocket 連上了但 Socket.IO namespace 握手失敗（可能是 auth 或 server 拒絕）。
+
+> **斷線處理設計：** 所有 scenario 均**不設重連機制**。壓測的目的是穩定施壓並觀察伺服器反應，斷線本身就是重要信號。自動重連會掩蓋問題（例如連線成功率從 94% 被修飾為 100%）、干擾時序指標、並可能因多人同時重連造成 reconnection storm。斷線時如實記錄 `ws_unexpected_close` 或 `ws_connection_error`，由 Dashboard 呈現即可。
+>
+> **Error handler 邏輯：** `student_connected` / `teacher_connected` 是 Rate 指標，只在連線從未建立時記錄失敗（`connectionSuccess` flag）。若連線已成功建立後才發生錯誤，不會記錄 `add(0)` 以避免汙染 Rate 分母。
+
+### Event Delivery (Gauge)
+
+用於衡量 API 呼叫 → WS event 投遞到接收方的延遲。每個 metric 記錄發送方和接收方的絕對時間戳（`Date.now()`），Grafana 用 `spread()` 計算 `max - min` 得出 delivery time。
+
+| 指標                          | 方向              | 說明                           |
+| ----------------------------- | ----------------- | ------------------------------ |
+| `delivery_quiz_created`       | Teacher → Students | 老師出題 → 學生收到事件        |
+| `delivery_student_submitted`  | Students → Teacher | 學生提交答案 → 老師收到事件    |
+| `delivery_quiz_finished`      | Teacher → Students | 老師結束測驗 → 學生收到事件    |
+| `delivery_quiz_disclosed`     | Teacher → Students | 老師公布答案 → 學生收到事件    |
+| `delivery_quiz_closed`        | Teacher → Students | 老師關閉測驗 → 學生收到事件    |
+| `delivery_lesson_end`         | Teacher → Students | 老師結束課程 → 學生收到事件    |
+
+> **InfluxDB 標籤說明：** 所有 metric `.add()` 呼叫都帶有 `{ room, student }` 或 `{ room, role, student }` 標籤，用來防止 InfluxDB 時間戳碰撞（多個 VU 在同一微秒寫入相同 measurement + tagset 時會被視為同一筆資料覆蓋）。
 
 ### HTTP 成功計數 (Counter)
 
