@@ -98,7 +98,7 @@ jobs:
           # InfluxDB Output
           # TODO: 建立 VirtualService 對外暴露 InfluxDB 後，將 K6_INFLUXDB_ADDR 改為 K8s InfluxDB 地址
           K6_INFLUXDB_ADDR: ${{ secrets.K6_INFLUXDB_ADDR }}
-          K6_INFLUXDB_PUSH_INTERVAL: "5s"
+          K6_INFLUXDB_PUSH_INTERVAL: "1s"
         run: |
           echo "========================================"
           echo "Running K6 Load Test"
