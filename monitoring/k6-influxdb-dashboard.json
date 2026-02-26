@@ -88,14 +88,17 @@
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
-      "title": "WebSocket Events",
+      "title": "Test Flow",
       "type": "row"
     },
     {
       "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
       "fieldConfig": {
         "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "unit": "short" },
-        "overrides": []
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "unexpected_close" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "connection_error" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
       },
       "gridPos": { "h": 6, "w": 24, "x": 0, "y": 6 },
       "options": {
@@ -107,7 +110,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "title": "Socket Events Summary",
+      "title": "Event Summary",
       "type": "bargauge",
       "targets": [
         { "query": "SELECT sum(\"value\") FROM \"ws_connected\" WHERE $timeFilter", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "ws_connected" },
@@ -116,183 +119,122 @@
         { "query": "SELECT sum(\"value\") FROM \"ws_join_lesson_sent\" WHERE $timeFilter", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "join_lesson" },
         { "query": "SELECT sum(\"value\") FROM \"ws_teacher_join_lesson_sent\" WHERE $timeFilter", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "teacher_join" },
         { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_created\" WHERE $timeFilter", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "quiz_created" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_event_student_submitted\" WHERE $timeFilter", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "student_submitted" },
         { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_finished\" WHERE $timeFilter", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "quiz_finished" },
         { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_disclosed\" WHERE $timeFilter", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "quiz_disclosed" },
         { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_closed\" WHERE $timeFilter", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "quiz_closed" },
-        { "query": "SELECT sum(\"value\") FROM \"ws_event_student_submitted\" WHERE $timeFilter", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "student_submitted" },
         { "query": "SELECT sum(\"value\") FROM \"ws_event_end_lesson\" WHERE $timeFilter", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "end_lesson" },
-        { "query": "SELECT sum(\"value\") FROM \"ws_disconnected\" WHERE $timeFilter", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "ws_disconnected" }
+        { "query": "SELECT sum(\"value\") FROM \"ws_disconnected\" WHERE $timeFilter", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "ws_disconnected" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_unexpected_close\" WHERE $timeFilter", "rawQuery": true, "refId": "M", "resultFormat": "time_series", "alias": "unexpected_close" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_connection_error\" WHERE $timeFilter", "rawQuery": true, "refId": "N", "resultFormat": "time_series", "alias": "connection_error" }
       ]
     },
     {
       "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "unexpected_close" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }, { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }] },
+          { "matcher": { "id": "byName", "options": "connection_error" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }, { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }] }
+        ]
+      },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
       "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "title": "Socket Events Over Time",
+      "title": "Events Over Time",
       "type": "timeseries",
       "targets": [
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_connected\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "ws_connected" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_namespace_connected\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "namespace_connected" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_seat_chosen\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "seat_chosen" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_join_lesson_sent\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "join_lesson" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_teacher_join_lesson_sent\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "teacher_join" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_created\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "quiz_created" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_student_submitted\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "student_submitted" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_finished\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "quiz_finished" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_disclosed\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "quiz_disclosed" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_closed\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "quiz_closed" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_end_lesson\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "end_lesson" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_disconnected\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "ws_disconnected" }
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_connected\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "ws_connected" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_namespace_connected\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "namespace_connected" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_seat_chosen\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "seat_chosen" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_join_lesson_sent\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "join_lesson" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_teacher_join_lesson_sent\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "teacher_join" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_created\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "quiz_created" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_student_submitted\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "student_submitted" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_finished\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "quiz_finished" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_disclosed\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "quiz_disclosed" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_closed\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "quiz_closed" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_end_lesson\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "end_lesson" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_disconnected\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "ws_disconnected" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_unexpected_close\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "M", "resultFormat": "time_series", "alias": "unexpected_close" },
+        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_connection_error\" WHERE $timeFilter GROUP BY time(1s) fill(0)", "rawQuery": true, "refId": "N", "resultFormat": "time_series", "alias": "connection_error" }
       ]
     },
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
-      "title": "HTTP Performance",
+      "title": "Performance",
       "type": "row"
     },
     {
       "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 21 },
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "HTTP Request Duration (by API)",
       "type": "timeseries",
       "targets": [
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='create_room' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "create_room p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='create_lesson' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "create_lesson p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='start_lesson' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "start_lesson p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='end_lesson' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "end_lesson p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='choose_seat' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "choose_seat p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='create_quizzes' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "create_quizzes p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='fetch_quiz' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "fetch_quiz p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='submit_answers' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "submit_answers p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='finish_quiz' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "finish_quiz p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='close_quiz' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "close_quiz p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='disclose_quiz' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "disclose_quiz p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"name\"='add_points' AND $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "add_points p99" }
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='choose_seat' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "choose_seat p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='submit_answers' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "submit_answers p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='fetch_quiz' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "fetch_quiz p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='create_quizzes' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "create_quizzes p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='create_room' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "create_room p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='create_lesson' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "create_lesson p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='start_lesson' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "start_lesson p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='end_lesson' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "end_lesson p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='finish_quiz' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "finish_quiz p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='disclose_quiz' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "disclose_quiz p95" },
+        { "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"name\"='close_quiz' AND $timeFilter GROUP BY time(10s) fill(none)", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "close_quiz p95" }
       ]
-    },
-    {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
-      "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "title": "HTTP Requests Count (total)",
-      "type": "timeseries",
-      "targets": [
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_req_failed\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "failed_rate" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_create_room\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "create_room" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_create_lesson\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "create_lesson" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_start_lesson\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "start_lesson" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_end_lesson\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "end_lesson" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_choose_seat\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "choose_seat" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_create_quizzes\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "create_quizzes" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_fetch_quiz\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "fetch_quiz" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_submit_answers\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "submit_answers" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_finish_quiz\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "finish_quiz" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_close_quiz\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "close_quiz" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"http_success_disclose_quiz\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "M", "resultFormat": "time_series", "alias": "disclose_quiz" }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
-      "title": "Custom Metrics",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
-      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "title": "Custom Timing Metrics",
-      "type": "timeseries",
-      "targets": [
-        { "query": "SELECT percentile(\"value\", 99) FROM \"seat_time\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "choose_seat p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"submit_time\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "submit_answers p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"quiz_received_time\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "quiz_received p99" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"time_to_seat\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "time_to_seat p99" }
-      ]
-    },
-    {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" } },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
-      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "title": "WebSocket Timing",
-      "type": "timeseries",
-      "targets": [
-        { "query": "SELECT percentile(\"value\", 99) FROM \"ws_connect_time\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "ws_connect p99 (ms)" },
-        { "query": "SELECT percentile(\"value\", 99) FROM \"ws_connection_duration\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "connection_duration p99 (ms)" },
-        { "query": "SELECT percentile(\"value\", 99) * 1000 FROM \"ws_connecting\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "ws_connecting p99 (ms)" }
-      ]
-    },
-    {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" } },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 38 },
-      "options": { "legend": { "calcs": ["max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "title": "WebSocket Connection Lifecycle",
-      "type": "timeseries",
-      "targets": [
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_connected\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "connected" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_namespace_connected\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "namespace_connected" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_seat_chosen\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "seat_chosen" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_join_lesson_sent\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "join_lesson" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_created\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "quiz_created" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_student_submitted\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "student_submitted" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_finished\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "quiz_finished" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_quiz_closed\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "quiz_closed" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_event_end_lesson\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "end_lesson" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_disconnected\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "disconnected" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_unexpected_close\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "unexpected_close" },
-        { "query": "SELECT cumulative_sum(sum(\"value\")) FROM \"ws_connection_error\" WHERE $timeFilter GROUP BY time($__interval)", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "connection_error" }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
-      "title": "HTTP Success (by API)",
-      "type": "row"
     },
     {
       "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 1000 }] }, "unit": "ms" },
         "overrides": []
       },
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 47 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 21 },
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "title": "WS Handshake p95",
+      "type": "stat",
+      "targets": [{ "query": "SELECT percentile(\"value\", 95) FROM \"ws_connecting\" WHERE $timeFilter", "rawQuery": true, "refId": "A", "resultFormat": "time_series" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
+      "title": "Event Delivery",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "description": "API 發起 → WS event 接收的時間差 (spread = max - min per room)。多 room 時取最慢的那間。",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 3000 }, { "color": "red", "value": 10000 }] }, "unit": "ms" },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 30 },
       "options": {
         "displayMode": "lcd",
         "minVizHeight": 10,
         "minVizWidth": 0,
         "orientation": "horizontal",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": { "calcs": ["max"], "fields": "", "values": false },
         "showUnfilled": true,
         "text": {}
       },
-      "title": "HTTP Success by API",
+      "title": "Event Delivery Time",
       "type": "bargauge",
       "targets": [
-        { "query": "SELECT sum(\"value\") FROM \"http_success_create_room\" WHERE $timeFilter", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "create_room" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_create_lesson\" WHERE $timeFilter", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "create_lesson" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_start_lesson\" WHERE $timeFilter", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "start_lesson" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_choose_seat\" WHERE $timeFilter", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "choose_seat" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_fetch_quiz\" WHERE $timeFilter", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "fetch_quiz" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_submit_answers\" WHERE $timeFilter", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "submit_answers" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_create_quizzes\" WHERE $timeFilter", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "create_quizzes" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_finish_quiz\" WHERE $timeFilter", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "finish_quiz" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_disclose_quiz\" WHERE $timeFilter", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "disclose_quiz" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_close_quiz\" WHERE $timeFilter", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "close_quiz" },
-        { "query": "SELECT sum(\"value\") FROM \"http_success_end_lesson\" WHERE $timeFilter", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "end_lesson" }
+        { "query": "SELECT spread(\"value\") FROM \"delivery_quiz_created\" WHERE $timeFilter GROUP BY \"room\"", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "quiz_created" },
+        { "query": "SELECT spread(\"value\") FROM \"delivery_student_submitted\" WHERE $timeFilter GROUP BY \"room\"", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "student_submitted" },
+        { "query": "SELECT spread(\"value\") FROM \"delivery_quiz_finished\" WHERE $timeFilter GROUP BY \"room\"", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "quiz_finished" },
+        { "query": "SELECT spread(\"value\") FROM \"delivery_quiz_disclosed\" WHERE $timeFilter GROUP BY \"room\"", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "quiz_disclosed" },
+        { "query": "SELECT spread(\"value\") FROM \"delivery_quiz_closed\" WHERE $timeFilter GROUP BY \"room\"", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "quiz_closed" },
+        { "query": "SELECT spread(\"value\") FROM \"delivery_lesson_end\" WHERE $timeFilter GROUP BY \"room\"", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "lesson_end" }
       ]
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
-      "title": "HTTP Errors",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "title": "Errors",
       "type": "row"
     },
     {
@@ -301,7 +243,7 @@
         "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] }, "unit": "short" },
         "overrides": []
       },
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 54 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 37 },
       "options": {
         "displayMode": "lcd",
         "minVizHeight": 10,
@@ -320,7 +262,8 @@
         { "query": "SELECT sum(\"value\") FROM \"http_error_404\" WHERE $timeFilter", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "404" },
         { "query": "SELECT sum(\"value\") FROM \"http_error_409\" WHERE $timeFilter", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "409" },
         { "query": "SELECT sum(\"value\") FROM \"http_error_500\" WHERE $timeFilter", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "500" },
-        { "query": "SELECT sum(\"value\") FROM \"seat_error_409\" WHERE $timeFilter", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "seat_409" }
+        { "query": "SELECT sum(\"value\") FROM \"http_error_503\" WHERE $timeFilter", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "503" },
+        { "query": "SELECT sum(\"value\") FROM \"seat_error_409\" WHERE $timeFilter", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "seat_409" }
       ]
     }
   ],
