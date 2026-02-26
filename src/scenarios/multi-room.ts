@@ -178,6 +178,7 @@ function studentBehavior(
             nsSid = (parsed.data?.sid as string) || null;
             wsConnection.namespaceConnected.add(1);
 
+            const seatStart = Date.now();
             const seat = chooseSeat(
               lessonId,
               studentNum,
@@ -185,6 +186,7 @@ function studentBehavior(
               deviceId,
               roomId
             );
+            const seatDuration = Date.now() - seatStart;
             if (seat) {
               studentId = seat.studentId;
               socketToken = seat.token;
@@ -192,11 +194,11 @@ function studentBehavior(
 
               const totalTimeToSeat = Date.now() - startTimestamp;
               timeToSeat.add(totalTimeToSeat);
-              seatWithin3s.add(totalTimeToSeat <= 3000 ? 1 : 0);
+              seatWithin3s.add(seatDuration <= 3000 ? 1 : 0);
 
-              if (totalTimeToSeat > 3000) {
+              if (seatDuration > 3000) {
                 console.warn(
-                  `[Room ${roomId}] Student ${studentNum}: ${totalTimeToSeat}ms to seat (>3s)`
+                  `[Room ${roomId}] Student ${studentNum}: ${seatDuration}ms to seat (>3s)`
                 );
               }
 

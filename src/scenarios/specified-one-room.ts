@@ -167,7 +167,9 @@ export function studentScenario(data: SetupData): void {
                         nsSid = (parsed.data?.sid as string) || null;
                         wsConnection.namespaceConnected.add(1);
 
+                        const seatStart = Date.now();
                         const seat = chooseSeat(lessonId, studentNum, nsSid || '', deviceId);
+                        const seatDuration = Date.now() - seatStart;
                         if (seat) {
                             studentId = seat.studentId;
                             socketToken = seat.token;
@@ -175,10 +177,10 @@ export function studentScenario(data: SetupData): void {
 
                             const totalTimeToSeat = Date.now() - startTimestamp;
                             timeToSeat.add(totalTimeToSeat);
-                            seatWithin3s.add(totalTimeToSeat <= 3000 ? 1 : 0);
+                            seatWithin3s.add(seatDuration <= 3000 ? 1 : 0);
 
-                            if (totalTimeToSeat > 3000) {
-                                console.warn(`Student ${studentNum}: ${totalTimeToSeat}ms to seat (>3s)`);
+                            if (seatDuration > 3000) {
+                                console.warn(`Student ${studentNum}: ${seatDuration}ms to seat (>3s)`);
                             }
 
                             socket.send(encodeEvent(NAMESPACE, 'join_lesson', {
