@@ -1,134 +1,127 @@
 # K6 Load Testing Dashboard 欄位說明
 
-本文件說明 Grafana Dashboard (`k6-prometheus-dashboard.json`) 中各面板與指標的意義。
+本文件說明 Grafana Dashboard (`k6-influxdb-dashboard.json`) 中各面板與指標的意義。
+
+> **資料來源：** InfluxDB（k6 在 commit `2034b62` 後已從 Prometheus 切換至 InfluxDB）。
+> Prometheus dashboard (`k6-prometheus-dashboard.json`) 仍保留作為參考，但已非主要 dashboard。
 
 ---
 
 ## 一、Overview（概覽區塊）
 
-| 面板名稱 | 指標 | 說明 |
-|---------|------|------|
-| **Students Connected** | `k6_ws_join_lesson_sent_total` | 已連線並加入課程的學生總數 |
-| **Students Seated** | `k6_ws_seat_chosen_total` | 已選擇座位的學生總數 |
-| **Answers Submitted** | `k6_http_success_submit_answers_total` | 成功提交答案的總次數 |
-| **Events Received** | `k6_ws_event_quiz_created_total` | 收到的測驗建立事件總數 |
-| **Errors** | `k6_errors_total` | 錯誤總數（紅色警示） |
-| **HTTP Requests** | `k6_http_reqs_total` | HTTP 請求總數 |
+| 面板名稱 | InfluxDB Measurement | 說明 |
+|---------|---------------------|------|
+| **Students Connected** | `ws_join_lesson_sent` | 已連線並送出 join_lesson 的學生總數 |
+| **Students Seated** | `ws_seat_chosen` | 已選擇座位的學生總數 |
+| **Answers Submitted** | `http_success_submit_answers` | 成功提交答案的總次數 |
+| **Events Received** | `ws_event_quiz_created` | 學生收到的 quiz_created 事件總數 |
+| **Errors** | `http_error_500` | HTTP 500 錯誤總數（紅色警示） |
+| **HTTP Requests** | `http_reqs` | k6 內建 HTTP 請求總數 |
 
 ---
 
-## 二、WebSocket Events（WebSocket 事件區塊）
+## 二、Test Flow（測試流程區塊）
 
-### Socket Events Summary（事件摘要長條圖）
+### Event Summary（bargauge）
 
-| 指標名稱 | 說明 |
-|---------|------|
-| `ws_connected` | WebSocket 連線成功次數 |
-| `namespace_connected` | 命名空間連線成功次數 |
-| `seat_chosen` | 選擇座位事件次數 |
-| `join_lesson` | 學生加入課程次數 |
-| `teacher_join` | 教師加入課程次數 |
-| `quiz_created` | 測驗建立事件次數 |
-| `quiz_finished` | 測驗結束事件次數 |
-| `quiz_disclosed` | 測驗公佈答案事件次數 |
-| `quiz_closed` | 測驗關閉事件次數 |
-| `student_submitted` | 學生提交答案事件次數 |
-| `end_lesson` | 課程結束事件次數 |
-| `ws_disconnected` | WebSocket 斷線次數 |
+一覽所有 WebSocket 事件累計數，用於確認測試流程是否完整。
+
+| Alias | InfluxDB Measurement | 說明 |
+|-------|---------------------|------|
+| `ws_connected` | `ws_connected` | WebSocket TCP 握手成功 |
+| `namespace_connected` | `ws_namespace_connected` | Socket.IO Namespace 加入成功 |
+| `seat_chosen` | `ws_seat_chosen` | 選座 API 成功 |
+| `join_lesson` | `ws_join_lesson_sent` | 學生發送 join_lesson |
+| `teacher_join` | `ws_teacher_join_lesson_sent` | 老師發送 join_lesson |
+| `quiz_created` | `ws_event_quiz_created` | 學生收到 Quiz 建立事件 |
+| `student_submitted` | `ws_event_student_submitted` | 老師收到學生提交事件 |
+| `quiz_finished` | `ws_event_quiz_finished` | 收到 Quiz 結束事件 |
+| `quiz_disclosed` | `ws_event_quiz_disclosed` | 收到 Quiz 公布事件 |
+| `quiz_closed` | `ws_event_quiz_closed` | 收到 Quiz 關閉事件 |
+| `end_lesson` | `ws_event_end_lesson` | 收到課程結束事件 |
+| `ws_disconnected` | `ws_disconnected` | WebSocket 正常斷線 |
+| `unexpected_close` | `ws_unexpected_close` | WebSocket 非預期斷線（橘色警示） |
+| `connection_error` | `ws_connection_error` | WebSocket 連線錯誤（紅色警示） |
+
+### Events Over Time（timeseries）
+
+同樣的 measurement，但用 `cumulative_sum(sum("value"))` + `GROUP BY time(1s) fill(0)` 畫成累積曲線，可看出事件投遞的時間分佈。
 
 ---
 
-## 三、HTTP Performance（HTTP 效能區塊）
+## 三、Performance（效能區塊）
 
-### HTTP Request Duration（請求延遲時間 - P99）
+### HTTP Request Duration by API（p95 timeseries，單位 ms）
+
+從 `http_req_duration` 拉出特定 API 名稱的 p95 延遲：
+
+```sql
+SELECT percentile("value", 95) FROM "http_req_duration"
+WHERE "name"='<api_name>' AND $timeFilter
+GROUP BY time(10s) fill(none)
+```
 
 | API 名稱 | 說明 |
 |---------|------|
-| `create_room` | 建立房間 API 延遲 |
-| `create_lesson` | 建立課程 API 延遲 |
-| `start_lesson` | 開始課程 API 延遲 |
-| `end_lesson` | 結束課程 API 延遲 |
-| `choose_seat` | 選擇座位 API 延遲 |
-| `create_quizzes` | 建立測驗 API 延遲 |
-| `fetch_quiz` | 取得測驗 API 延遲 |
-| `submit_answers` | 提交答案 API 延遲 |
-| `finish_quiz` | 完成測驗 API 延遲 |
-| `close_quiz` | 關閉測驗 API 延遲 |
-| `disclose_quiz` | 公佈測驗答案 API 延遲 |
-| `add_points` | 加分 API 延遲 |
+| `choose_seat` | 選擇座位 |
+| `submit_answers` | 提交答案 |
+| `fetch_quiz` | 取得測驗 |
+| `create_quizzes` | 建立測驗 |
+| `create_room` | 建立房間 |
+| `create_lesson` | 建立課程 |
+| `start_lesson` | 開始課程 |
+| `end_lesson` | 結束課程 |
+| `finish_quiz` | 完成測驗 |
+| `disclose_quiz` | 公布答案 |
+| `close_quiz` | 關閉測驗 |
 
-### HTTP Requests Rate（每秒請求數）
+### WS Handshake p95（stat，單位 ms）
 
-顯示各 API 的每秒請求速率（req/s），包含：
+```sql
+SELECT percentile("value", 95) FROM "ws_connecting" WHERE $timeFilter
+```
 
-- `total_requests/s` - 總請求速率
-- `failed_requests/s` - 失敗請求速率
-- 各 API 個別速率
-
----
-
-## 四、Custom Metrics（自定義指標區塊）
-
-### Custom Timing Metrics（自定義時間指標）
-
-| 指標名稱 | 說明 |
-|---------|------|
-| `choose_seat p99` | 選擇座位操作的 P99 延遲時間 |
-| `submit_answers p99` | 提交答案操作的 P99 延遲時間 |
-| `quiz_received p99` | 收到測驗的 P99 延遲時間 |
-| `time_to_seat p99` | 從連線到入座的 P99 總時間 |
-
-### WebSocket Timing（WebSocket 時間指標）
-
-| 指標名稱 | 說明 |
-|---------|------|
-| `ws_connect p99` | WebSocket 連線建立的 P99 時間 |
-| `connection_duration p99` | 連線持續時間的 P99 值 |
-| `ws_connecting p99` | WebSocket 連線中狀態的 P99 時間 |
-
-### WebSocket Connection Lifecycle（連線生命週期）
-
-追蹤完整的 WebSocket 連線狀態變化，包含：
-
-- `connected` / `namespace_connected` - 連線狀態
-- `unexpected_close` - 意外斷線次數
-- `connection_error` - 連線錯誤次數
+`ws_connecting` 是 k6 內建的 WebSocket 握手時間 metric。閾值：< 500ms 綠、500–1000ms 黃、> 1000ms 紅。
 
 ---
 
-## 五、HTTP Success（HTTP 成功統計區塊）
+## 四、Event Delivery（事件投遞區塊）
 
-顯示各 API 成功呼叫的總次數：
+衡量 API 呼叫 → WS event 投遞到接收方的延遲。每個 metric 同時記錄發送方與接收方的絕對時間戳（`Date.now()`），Grafana 用 `spread() = max - min` 計算 delivery time。多 room 時 `GROUP BY "room"` 並取最慢的那間。
 
-| API | 說明 |
-|-----|------|
-| `create_room` | 建立房間成功次數 |
-| `create_lesson` | 建立課程成功次數 |
-| `start_lesson` | 開始課程成功次數 |
-| `choose_seat` | 選擇座位成功次數 |
-| `fetch_quiz` | 取得測驗成功次數 |
-| `submit_answers` | 提交答案成功次數 |
-| `create_quizzes` | 建立測驗成功次數 |
-| `finish_quiz` | 完成測驗成功次數 |
-| `disclose_quiz` | 公佈答案成功次數 |
-| `close_quiz` | 關閉測驗成功次數 |
-| `end_lesson` | 結束課程成功次數 |
+| Alias | InfluxDB Measurement | 方向 |
+|-------|---------------------|------|
+| `quiz_created` | `delivery_quiz_created` | Teacher → Students |
+| `student_submitted` | `delivery_student_submitted` | Students → Teacher |
+| `quiz_finished` | `delivery_quiz_finished` | Teacher → Students |
+| `quiz_disclosed` | `delivery_quiz_disclosed` | Teacher → Students |
+| `quiz_closed` | `delivery_quiz_closed` | Teacher → Students |
+| `lesson_end` | `delivery_lesson_end` | Teacher → Students |
+
+閾值：< 3000ms 綠、3000–10000ms 黃、> 10000ms 紅。
+
+> **InfluxDB tag 設計：** 所有 `.add()` 呼叫都帶有 `{ room, student }` 或 `{ room, role, student }` 標籤，避免 InfluxDB 時間戳碰撞（多個 VU 在同一微秒寫入相同 measurement + tagset 會被覆蓋）。
 
 ---
 
-## 六、HTTP Errors（HTTP 錯誤統計區塊）
+## 五、Errors（錯誤區塊）
 
-依 HTTP 狀態碼分類的錯誤統計：
+### HTTP Errors by Status Code（bargauge）
 
-| 狀態碼 | 說明 |
-|-------|------|
-| `400` | Bad Request - 請求格式錯誤 |
-| `401` | Unauthorized - 未授權 |
-| `403` | Forbidden - 禁止存取 |
-| `404` | Not Found - 資源不存在 |
-| `409` | Conflict - 資源衝突 |
-| `500` | Internal Server Error - 伺服器內部錯誤 |
-| `seat_409` | 座位衝突錯誤（特殊追蹤） |
+| Alias | InfluxDB Measurement | 說明 |
+|-------|---------------------|------|
+| `400` | `http_error_400` | Bad Request |
+| `401` | `http_error_401` | Unauthorized |
+| `403` | `http_error_403` | Forbidden |
+| `404` | `http_error_404` | Not Found |
+| `409` | `http_error_409` | Conflict |
+| `500` | `http_error_500` | Internal Server Error |
+| `503` | `http_error_503` | Service Unavailable |
+| `seat_409` | `seat_error_409` | 選座衝突（特殊追蹤） |
+
+閾值：0 綠、≥1 黃、≥5 紅。
+
+> 完整 error counter 還包含 `http_error_402/422/429/502/504/timeout/other` 與 `seat_error_xxx` 系列，定義於 `src/lib/metrics.ts`，但目前 dashboard 只呈現上表這幾個常見的。
 
 ---
 
@@ -137,6 +130,7 @@
 | 設定項目 | 值 |
 |---------|---|
 | **自動重新整理** | 每 5 秒 |
-| **預設時間範圍** | 最近 5 分鐘 |
-| **資料來源** | Prometheus |
-| **標籤** | k6, prometheus, load-testing |
+| **預設時間範圍** | 最近 15 分鐘 |
+| **資料來源** | InfluxDB（透過 `${DS_INFLUXDB}` 變數選擇） |
+| **標籤** | k6, influxdb, load-testing |
+| **Schema 版本** | 39 |

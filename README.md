@@ -20,14 +20,21 @@ ocelot-k6-script/
 │       ├── load-test.ts            # 長時間負載測試
 │       └── stress-test.ts          # 階梯式壓力測試
 ├── monitoring/                 # 監控配置
-│   ├── docker-compose.yml     # Prometheus + Grafana
+│   ├── docker-compose.yml     # InfluxDB + Prometheus + Grafana
 │   ├── prometheus.yml         # Prometheus 設定
-│   ├── k6-influxdb-dashboard.json    # Grafana Dashboard (InfluxDB)
-│   ├── k6-prometheus-dashboard.json  # Grafana Dashboard (Prometheus)
+│   ├── k6-influxdb-dashboard.json    # Grafana Dashboard (InfluxDB，目前主要使用)
+│   ├── k6-prometheus-dashboard.json  # Grafana Dashboard (Prometheus，保留參考)
 │   ├── DASHBOARD_FIELDS.md    # Dashboard 欄位說明
 │   └── provisioning/          # Grafana 自動配置
 │       ├── dashboards/
 │       └── datasources/
+├── docs/
+│   └── k6-monitoring-overview.html   # k6 監控簡報（HTML）
+├── .github/
+│   └── workflows/
+│       ├── k6-load-test.yml          # 手動觸發 k6 測試 (CI)
+│       ├── security-scan-pr.yaml     # PR 安全掃描 (SAST + SCA)
+│       └── security-scan-full.yaml   # 完整安全掃描（push/排程）
 ├── dist/                       # 編譯輸出 (git ignored)
 ├── .env.example               # 環境變數範例
 ├── .env.local                 # 本地環境變數 (git ignored)
@@ -406,11 +413,15 @@ pnpm monitoring:down  # 停止
 1. 到 GitHub repo → **Actions** → **K6 Load Test**
 2. 點擊 **Run workflow**
 3. 選擇參數：
-   - `scenario`: multi-room / specified-one-room / load-test
-   - `num_rooms`: 教室數量
+   - `scenario`: multi-room / specified-one-room / load-test / stress-test
+   - `num_rooms`: 教室數量（multi-room/load-test）
    - `students_per_room`: 每間教室學生數
+   - `room_id`: 教室 ID（specified-one-room）
    - `lesson_duration`: 課程時長（load-test）
    - `quiz_count`: 測驗次數（load-test）
+   - `max_vus`: 最大虛擬用戶數（stress-test）
+   - `stages`: 階段數量（stress-test）
+   - `stage_duration`: 每階段持續時間（stress-test，例如 `60s`）
 
 ### GitHub Secrets 設定
 
@@ -427,6 +438,21 @@ pnpm monitoring:down  # 停止
 | `ROOM_ID`          | -    | 教室 ID (specified-one-room)|
 | `COLLECTION_ID`    | ✅   | Quiz Collection ID          |
 | `K6_INFLUXDB_ADDR` | ✅   | InfluxDB 地址               |
+
+## DevSecOps 安全掃描
+
+專案在 `.github/workflows/` 內配置兩個由 `VSX-ViewSonic/edu-security-lab-va` 提供的安全掃描 reusable workflow：
+
+| Workflow                  | 觸發時機                           | 用途                                            |
+| ------------------------- | ---------------------------------- | ----------------------------------------------- |
+| `security-scan-pr.yaml`   | 每個 Pull Request                  | PR 階段的快速掃描（SAST + SCA gate）            |
+| `security-scan-full.yaml` | push 到 `main`/`master`、每日排程、手動 | 完整掃描（產品名稱：`edu/classswift/chinchilla-cat`） |
+
+掃描結果會以 GitHub Check 方式回饋到對應的 PR 或 commit。
+
+## 監控簡報
+
+`docs/k6-monitoring-overview.html` 提供 k6 指標體系與 dashboard 設計的 HTML 簡報，可直接用瀏覽器開啟，適合分享給 SRE / QA 同仁說明指標意義。
 
 ## 關鍵指標
 
@@ -471,6 +497,7 @@ pnpm monitoring:down  # 停止
 | `ws_event_quiz_closed`       | Quiz 關閉事件數    |
 | `ws_event_end_lesson`        | 課程結束事件數     |
 | `ws_event_student_submitted` | 學生提交答案事件數 |
+| `ws_event_student_points`    | 學生加分事件數     |
 
 ### WebSocket 連線狀態 (Counter)
 
@@ -514,13 +541,36 @@ pnpm monitoring:down  # 停止
 | ----------------------------- | ---------------- |
 | `http_success_create_room`    | 建立教室成功數   |
 | `http_success_create_lesson`  | 建立課程成功數   |
+| `http_success_start_lesson`   | 啟動課程成功數   |
 | `http_success_choose_seat`    | 選座成功數       |
 | `http_success_create_quizzes` | 建立 Quiz 成功數 |
+| `http_success_fetch_quiz`     | 取得 Quiz 成功數 |
 | `http_success_submit_answers` | 提交答案成功數   |
 | `http_success_finish_quiz`    | 結束 Quiz 成功數 |
 | `http_success_disclose_quiz`  | 公開 Quiz 成功數 |
 | `http_success_close_quiz`     | 關閉 Quiz 成功數 |
 | `http_success_end_lesson`     | 結束課程成功數   |
+| `http_success_add_points`     | 加分成功數       |
+
+### HTTP 錯誤計數 (Counter)
+
+依 HTTP status code 分類的錯誤計數，定義於 `src/lib/metrics.ts`：
+
+| 指標                                                              | 說明                                          |
+| ----------------------------------------------------------------- | --------------------------------------------- |
+| `http_error_400` / `401` / `403` / `404` / `409`                  | 常見 client 端錯誤                            |
+| `http_error_422` / `429`                                          | 422 Unprocessable / 429 Too Many Requests     |
+| `http_error_500` / `502` / `503` / `504`                          | server 端錯誤                                 |
+| `http_error_timeout`                                              | k6 status === 0（連線/讀取 timeout）          |
+| `http_error_other`                                                | 其他未列出的 status code                      |
+| `seat_error_400/401/403/404/409/422/429/500/timeout/other`        | 選座 API 專屬錯誤拆分（追蹤 seat 衝突場景）   |
+
+### Room 流程計數 (Counter)
+
+| 指標                    | 說明                                |
+| ----------------------- | ----------------------------------- |
+| `room_lesson_created`   | 已建立的 Lesson 數（每間教室一次）  |
+| `room_students_seated`  | 該 room 內成功就座的學生人次        |
 
 ## 測試結果範例
 
