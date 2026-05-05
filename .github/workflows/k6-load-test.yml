@@ -12,6 +12,7 @@ on:
           - multi-room
           - specified-one-room
           - load-test
+          - stress-test
       num_rooms:
         description: "Number of rooms (multi-room/load-test)"
         required: false
@@ -32,6 +33,18 @@ on:
         description: "Quiz count (load-test only)"
         required: false
         default: "4"
+      max_vus:
+        description: "Max VUs (stress-test only)"
+        required: false
+        default: "200"
+      stages:
+        description: "Number of stages (stress-test only)"
+        required: false
+        default: "5"
+      stage_duration:
+        description: "Stage duration (stress-test only, e.g. 60s)"
+        required: false
+        default: "60s"
 
 jobs:
   k6-test:
@@ -92,6 +105,10 @@ jobs:
           LESSON_DURATION: ${{ inputs.lesson_duration }}
           QUIZ_COUNT: ${{ inputs.quiz_count }}
           QUIZ_INTERVAL: "4"
+          # Stress-Test Settings
+          MAX_VUS: ${{ inputs.max_vus }}
+          STAGES: ${{ inputs.stages }}
+          STAGE_DURATION: ${{ inputs.stage_duration }}
           # Other
           DISPLAY_NAME: "GitHub-Runner"
           REGION: "TW"
