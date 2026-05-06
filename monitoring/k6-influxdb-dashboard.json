@@ -265,6 +265,49 @@
         { "query": "SELECT sum(\"value\") FROM \"http_error_503\" WHERE $timeFilter", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "503" },
         { "query": "SELECT sum(\"value\") FROM \"seat_error_409\" WHERE $timeFilter", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "seat_409" }
       ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 43 },
+      "title": "Event Delivery Coverage",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "description": "對比每個事件「發送方計數」vs「接收方實際收到總計數」。理想: received = sent × 接收方數量 (例如 老師發 1 題 × 100 學生 = 100 received)。落差代表 WS 連線中斷導致漏收事件。",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*\\(sent\\)$" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*\\(received\\)$" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 44 },
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "title": "Sent vs Received (Total Count)",
+      "type": "bargauge",
+      "targets": [
+        { "query": "SELECT sum(\"value\") FROM \"http_success_create_quizzes\" WHERE $timeFilter", "rawQuery": true, "refId": "A", "resultFormat": "time_series", "alias": "quiz_created (sent)" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_created\" WHERE $timeFilter", "rawQuery": true, "refId": "B", "resultFormat": "time_series", "alias": "quiz_created (received)" },
+        { "query": "SELECT sum(\"value\") FROM \"http_success_finish_quiz\" WHERE $timeFilter", "rawQuery": true, "refId": "C", "resultFormat": "time_series", "alias": "quiz_finished (sent)" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_finished\" WHERE $timeFilter", "rawQuery": true, "refId": "D", "resultFormat": "time_series", "alias": "quiz_finished (received)" },
+        { "query": "SELECT sum(\"value\") FROM \"http_success_disclose_quiz\" WHERE $timeFilter", "rawQuery": true, "refId": "E", "resultFormat": "time_series", "alias": "quiz_disclosed (sent)" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_disclosed\" WHERE $timeFilter", "rawQuery": true, "refId": "F", "resultFormat": "time_series", "alias": "quiz_disclosed (received)" },
+        { "query": "SELECT sum(\"value\") FROM \"http_success_close_quiz\" WHERE $timeFilter", "rawQuery": true, "refId": "G", "resultFormat": "time_series", "alias": "quiz_closed (sent)" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_event_quiz_closed\" WHERE $timeFilter", "rawQuery": true, "refId": "H", "resultFormat": "time_series", "alias": "quiz_closed (received)" },
+        { "query": "SELECT sum(\"value\") FROM \"http_success_end_lesson\" WHERE $timeFilter", "rawQuery": true, "refId": "I", "resultFormat": "time_series", "alias": "end_lesson (sent)" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_event_end_lesson\" WHERE $timeFilter", "rawQuery": true, "refId": "J", "resultFormat": "time_series", "alias": "end_lesson (received)" },
+        { "query": "SELECT sum(\"value\") FROM \"http_success_submit_answers\" WHERE $timeFilter", "rawQuery": true, "refId": "K", "resultFormat": "time_series", "alias": "student_submitted (sent)" },
+        { "query": "SELECT sum(\"value\") FROM \"ws_event_student_submitted\" WHERE $timeFilter", "rawQuery": true, "refId": "L", "resultFormat": "time_series", "alias": "student_submitted (received)" }
+      ]
     }
   ],
   "refresh": "5s",

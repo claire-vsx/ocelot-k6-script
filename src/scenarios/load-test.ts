@@ -11,11 +11,12 @@
  *   QUIZ_INTERVAL    - 測驗間隔（分鐘），預設 5
  *
  * Usage:
- *   npm run build && k6 run dist/load-test.js \
- *     -e NUM_ROOMS=4 \
- *     -e STUDENTS_PER_ROOM=50 \
- *     -e LESSON_DURATION=30 \
- *     -e QUIZ_COUNT=5
+ *   source .env.local && pnpm test:load-test
+ *   source .env.local && pnpm test:load-test:influxdb
+ *
+ *   覆寫環境變數可 inline：
+ *     NUM_ROOMS=4 STUDENTS_PER_ROOM=50 LESSON_DURATION=30 QUIZ_COUNT=5 \
+ *       pnpm test:load-test:influxdb
  */
 
 import { sleep, group } from "k6";

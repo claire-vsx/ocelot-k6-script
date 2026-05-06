@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K6 教室負載測試 — 使用指南</title>
+
+<!-- 字型：Archivo (display) + Nunito (body) + JetBrains Mono (技術 / code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800;900&family=Nunito:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+/* ===========================================
+   THEME — Swiss Modern
+   想換顏色就改這裡
+   =========================================== */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #fafafa;
+  --ink: #0a0a0a;
+  --ink-muted: #6b6b6b;
+  --rule: rgba(10, 10, 10, 0.18);
+  --rule-soft: rgba(10, 10, 10, 0.08);
+  --accent: #ff3300;
+  --accent-soft: rgba(255, 51, 0, 0.08);
+
+  --font-display: 'Archivo', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --title-size: clamp(2rem, 5.5vw, 4.75rem);
+  --h2-size: clamp(1.4rem, 3.2vw, 2.6rem);
+  --h3-size: clamp(1rem, 2vw, 1.5rem);
+  --body-size: clamp(0.78rem, 1.15vw, 1rem);
+  --small-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  --mono-size: clamp(0.65rem, 0.85vw, 0.8rem);
+
+  --slide-padding: clamp(1.25rem, 3.5vw, 3rem);
+  --content-gap: clamp(0.75rem, 1.8vw, 1.75rem);
+  --element-gap: clamp(0.4rem, 1vw, 0.9rem);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration: 0.7s;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   VIEWPORT FITTING — 必要的 base styles
+   =========================================== */
+html, body { height: 100%; overflow-x: hidden; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: 1.5;
+}
+.slide {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: var(--slide-padding);
+}
+
+/* 背景：淡淡的 12 欄格線 */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--rule-soft) 1px, transparent 1px);
+  background-size: calc(100% / 12) 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 響應式縮放 */
+@media (max-height: 700px) {
+  :root {
+    --slide-padding: clamp(0.9rem, 2.5vw, 2rem);
+    --content-gap: clamp(0.5rem, 1.4vw, 1rem);
+    --title-size: clamp(1.6rem, 4.5vw, 3.2rem);
+    --h2-size: clamp(1.1rem, 2.8vw, 1.9rem);
+  }
+}
+@media (max-height: 600px) {
+  :root {
+    --slide-padding: clamp(0.6rem, 2vw, 1.5rem);
+    --content-gap: clamp(0.4rem, 1vw, 0.75rem);
+    --title-size: clamp(1.3rem, 4vw, 2.4rem);
+    --body-size: clamp(0.7rem, 1vw, 0.92rem);
+  }
+  .nav-dots, .keyboard-hint, .decorative { display: none; }
+}
+@media (max-height: 500px) {
+  :root {
+    --slide-padding: clamp(0.4rem, 1.5vw, 1rem);
+    --title-size: clamp(1.1rem, 3.5vw, 1.8rem);
+  }
+}
+@media (max-width: 600px) {
+  :root { --title-size: clamp(1.5rem, 7vw, 2.5rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.2s !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ===========================================
+   通用 Slide 排版 — 12 欄格線
+   =========================================== */
+.slide-grid {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(0.6rem, 1.5vh, 1.25rem);
+  min-height: 0;
+}
+
+/* 頁首 */
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: clamp(0.4rem, 0.8vh, 0.7rem);
+  font-family: var(--font-mono);
+  font-size: var(--mono-size);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.head .dot { color: var(--accent); font-size: 1.1em; }
+.head .right { color: var(--ink-muted); }
+
+/* 頁尾 */
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid var(--ink);
+  padding-top: clamp(0.4rem, 0.8vh, 0.7rem);
+  font-family: var(--font-mono);
+  font-size: var(--small-size);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.foot .accent { color: var(--accent); }
+
+/* 標題群組 */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 0.95vw, 0.85rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: clamp(0.4rem, 1vh, 0.8rem);
+}
+
+h1.title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--title-size);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+h1.title .red { color: var(--accent); }
+h1.title .invert {
+  display: inline-block;
+  background: var(--ink);
+  color: var(--bg);
+  padding: 0 0.18em;
+}
+
+h2.heading {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--h2-size);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+h2.heading .red { color: var(--accent); }
+
+h3.sub {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--h3-size);
+  letter-spacing: -0.01em;
+}
+
+/* ===========================================
+   動畫 — 進入 viewport 才觸發
+   =========================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity var(--duration) var(--ease),
+              transform var(--duration) var(--ease);
+}
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.slide.visible .reveal:nth-child(1) { transition-delay: 0.05s; }
+.slide.visible .reveal:nth-child(2) { transition-delay: 0.15s; }
+.slide.visible .reveal:nth-child(3) { transition-delay: 0.25s; }
+.slide.visible .reveal:nth-child(4) { transition-delay: 0.35s; }
+.slide.visible .reveal:nth-child(5) { transition-delay: 0.45s; }
+.slide.visible .reveal:nth-child(6) { transition-delay: 0.55s; }
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+.slide.visible .reveal-scale { opacity: 1; transform: scale(1); }
+
+/* ===========================================
+   Slide 1 — 封面
+   =========================================== */
+.slide-cover .body-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 12fr);
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: end;
+  position: relative;
+  padding-block: clamp(1rem, 4vh, 3rem);
+}
+.slide-cover .index {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2.5rem, 8vw, 6.5rem);
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.04em;
+}
+.slide-cover .title-block { min-width: 0; }
+.slide-cover .meta-row {
+  margin-top: clamp(0.8rem, 2vh, 1.5rem);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(0.5rem, 1.5vw, 1.5rem);
+  border-top: 1px solid var(--ink);
+  padding-top: clamp(0.5rem, 1vh, 0.8rem);
+}
+.meta-cell { font-family: var(--font-mono); font-size: clamp(0.7rem, 0.95vw, 0.85rem); }
+.meta-cell .lab {
+  display: block;
+  font-size: clamp(0.55rem, 0.7vw, 0.65rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 0.25em;
+}
+.deco-square,
+.deco-circle {
+  position: absolute;
+  z-index: 0;
+}
+.deco-square {
+  right: clamp(0.5rem, 2vw, 2rem);
+  top: clamp(2rem, 5vh, 4rem);
+  width: clamp(50px, 7vw, 100px);
+  height: clamp(50px, 7vw, 100px);
+  background: var(--accent);
+}
+.deco-circle {
+  right: calc(clamp(0.5rem, 2vw, 2rem) + clamp(50px, 7vw, 100px) + clamp(8px, 1.5vw, 20px));
+  top: clamp(2.5rem, 6vh, 5rem);
+  width: clamp(40px, 5.5vw, 80px);
+  height: clamp(40px, 5.5vw, 80px);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+}
+
+/* ===========================================
+   Slide 2 — Why (3 column)
+   =========================================== */
+.three-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.8rem, 2vw, 2rem);
+  align-content: center;
+  height: 100%;
+}
+.three-col .col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1vh, 0.9rem);
+  border-left: 2px solid var(--ink);
+  padding-left: clamp(0.6rem, 1.5vw, 1.5rem);
+}
+.three-col .num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  color: var(--accent);
+  line-height: 1;
+}
+.three-col h3 { line-height: 1.15; }
+.three-col p {
+  color: var(--ink-muted);
+  line-height: 1.55;
+  font-size: clamp(0.78rem, 1vw, 0.95rem);
+}
+@media (max-width: 800px) {
+  .three-col { grid-template-columns: 1fr; }
+}
+
+/* ===========================================
+   Slide 3 — 專案結構 (tree + stack)
+   =========================================== */
+.split-2 {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: clamp(1rem, 2.5vw, 2.5rem);
+  height: 100%;
+  align-items: stretch;
+  min-height: 0;
+}
+.tree {
+  background: var(--bg-soft);
+  border: 1px solid var(--rule);
+  padding: clamp(0.8rem, 2vw, 1.5rem);
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 0.95vw, 0.85rem);
+  line-height: 1.55;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: pre;
+}
+.tree .com { color: var(--ink-muted); }
+.tree .red { color: var(--accent); }
+.stack-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.8rem);
+  align-content: start;
+}
+.stack-row {
+  display: grid;
+  grid-template-columns: clamp(80px, 12vw, 130px) 1fr;
+  align-items: baseline;
+  gap: clamp(0.5rem, 1vw, 1rem);
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: clamp(0.3rem, 0.7vh, 0.5rem);
+}
+.stack-row .lab {
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.8vw, 0.72rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.stack-row .val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.95rem, 1.4vw, 1.2rem);
+}
+@media (max-width: 800px) {
+  .split-2 { grid-template-columns: 1fr; }
+}
+
+/* ===========================================
+   Slide 4 — 4 步驟快速開始
+   =========================================== */
+.steps-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(0.6rem, 1.5vw, 1.25rem);
+  align-content: center;
+  height: 100%;
+}
+.step-card {
+  border: 2px solid var(--ink);
+  padding: clamp(0.8rem, 1.5vw, 1.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.7rem);
+  position: relative;
+  min-height: 0;
+}
+.step-card .step-num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.4rem, 2.8vw, 2.2rem);
+  color: var(--accent);
+  line-height: 1;
+}
+.step-card h3 { font-size: clamp(0.95rem, 1.5vw, 1.2rem); }
+.step-card .code {
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.85vw, 0.78rem);
+  padding: clamp(0.4rem, 0.8vw, 0.7rem);
+  margin-top: auto;
+  line-height: 1.5;
+  white-space: pre;
+  overflow: hidden;
+}
+@media (max-width: 900px) { .steps-4 { grid-template-columns: repeat(2, 1fr); } }
+
+/* ===========================================
+   Slide 5 — 環境變數
+   =========================================== */
+.env-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.8rem, 2vw, 1.5rem);
+  height: 100%;
+  align-items: stretch;
+  min-height: 0;
+}
+.env-col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.7rem);
+  min-height: 0;
+}
+.env-col .head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: clamp(0.3rem, 0.7vh, 0.5rem);
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.78vw, 0.7rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.2em 0.6em;
+}
+.badge.req { background: var(--accent); color: var(--bg); }
+.badge.opt { background: var(--ink); color: var(--bg); }
+.env-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr;
+  align-items: baseline;
+  gap: clamp(0.5rem, 1vw, 1rem);
+  border-bottom: 1px solid var(--rule-soft);
+  padding: clamp(0.25rem, 0.5vh, 0.4rem) 0;
+}
+.env-row .key {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: clamp(0.7rem, 0.95vw, 0.88rem);
+  color: var(--ink);
+}
+.env-row .desc {
+  font-size: clamp(0.7rem, 0.9vw, 0.82rem);
+  color: var(--ink-muted);
+}
+@media (max-width: 800px) { .env-grid { grid-template-columns: 1fr; } }
+
+/* ===========================================
+   Slide 6 — 4 場景一覽 (2x2 grid)
+   =========================================== */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(0.6rem, 1.4vw, 1.2rem);
+  height: 100%;
+  min-height: 0;
+}
+.scenario-card {
+  border: 2px solid var(--ink);
+  padding: clamp(0.7rem, 1.6vw, 1.25rem);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: clamp(0.3rem, 0.8vh, 0.6rem);
+  position: relative;
+  overflow: hidden;
+}
+.scenario-card .num {
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.scenario-card h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.05rem, 1.8vw, 1.5rem);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.scenario-card p {
+  color: var(--ink-muted);
+  font-size: clamp(0.72rem, 0.92vw, 0.86rem);
+  line-height: 1.5;
+}
+.scenario-card .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.8vw, 0.72rem);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-top: 1px solid var(--rule);
+  padding-top: clamp(0.3rem, 0.6vh, 0.5rem);
+}
+.scenario-card .tag::before { content: '→'; color: var(--accent); font-weight: 700; }
+
+/* ===========================================
+   Slide 7-9 — 場景詳解通用排版
+   =========================================== */
+.scene-detail {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  height: 100%;
+  min-height: 0;
+  align-items: stretch;
+}
+.scene-left { display: flex; flex-direction: column; gap: clamp(0.5rem, 1.2vh, 1rem); min-height: 0; }
+.scene-left h2 { line-height: 1; }
+.scene-left .lede {
+  font-size: clamp(0.85rem, 1.15vw, 1.05rem);
+  color: var(--ink);
+  line-height: 1.5;
+  max-width: 50ch;
+}
+.scene-spec {
+  display: grid;
+  grid-template-columns: clamp(80px, 9vw, 110px) 1fr;
+  gap: clamp(0.3rem, 0.8vh, 0.6rem) clamp(0.5rem, 1.2vw, 1rem);
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 0.92vw, 0.85rem);
+  border-top: 1px solid var(--rule);
+  padding-top: clamp(0.5rem, 1vh, 0.8rem);
+}
+.scene-spec .k {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-size: clamp(0.6rem, 0.78vw, 0.72rem);
+  align-self: center;
+}
+.scene-right {
+  background: var(--bg-soft);
+  border: 1px solid var(--rule);
+  padding: clamp(0.8rem, 1.6vw, 1.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.8rem);
+  min-height: 0;
+  overflow: hidden;
+}
+.scene-right .lab {
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.78vw, 0.72rem);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: clamp(0.25rem, 0.5vh, 0.4rem);
+}
+.timeline {
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 0.88vw, 0.8rem);
+  line-height: 1.55;
+  white-space: pre;
+  color: var(--ink);
+  overflow: hidden;
+}
+.timeline .t { color: var(--accent); }
+.timeline .com { color: var(--ink-muted); }
+.cmd-block {
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  padding: clamp(0.5rem, 1vw, 0.85rem);
+  line-height: 1.6;
+  white-space: pre;
+  overflow: hidden;
+}
+.cmd-block .com { color: #888; }
+@media (max-width: 800px) { .scene-detail { grid-template-columns: 1fr; } }
+
+/* ===========================================
+   Slide 10 — Stress-Test 階梯圖
+   =========================================== */
+.stress-chart {
+  position: relative;
+  background: var(--bg-soft);
+  border: 1px solid var(--rule);
+  height: 100%;
+  display: grid;
+  grid-template-columns: clamp(36px, 4vw, 56px) 1fr;
+  grid-template-rows: 1fr clamp(20px, 3vh, 32px);
+  gap: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: clamp(0.5rem, 1vw, 1rem) clamp(0.3rem, 0.6vw, 0.6rem);
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.7vw, 0.68rem);
+  color: var(--ink-muted);
+}
+.x-axis {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 clamp(0.5rem, 1vw, 1rem);
+  border-top: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.7vw, 0.68rem);
+  color: var(--ink-muted);
+}
+.bars {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  border-left: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(2px, 0.5vw, 8px);
+  padding: clamp(0.3rem, 0.8vh, 0.6rem);
+}
+.bar {
+  flex: 1;
+  background: var(--accent);
+  position: relative;
+  transition: height 1s var(--ease) 0.2s;
+  height: 0;
+}
+.slide.visible .bar { height: var(--h, 20%); }
+.bar.recover { background: var(--ink); }
+.bar .lbl {
+  position: absolute;
+  top: -1.4em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.7vw, 0.68rem);
+  white-space: nowrap;
+  color: var(--ink);
+}
+.stress-meta {
+  margin-top: clamp(0.5rem, 1vh, 0.8rem);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(0.4rem, 1vw, 1rem);
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  border-top: 1px solid var(--rule);
+  padding-top: clamp(0.4rem, 0.8vh, 0.6rem);
+}
+.stress-meta .lab {
+  display: block;
+  font-size: clamp(0.55rem, 0.7vw, 0.65rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 0.2em;
+}
+
+/* ===========================================
+   Slide 11 — 指標體系 (3 categories)
+   =========================================== */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.7rem, 1.6vw, 1.4rem);
+  height: 100%;
+  align-content: stretch;
+  min-height: 0;
+}
+.metric-col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.7rem);
+  border-top: 4px solid var(--accent);
+  padding-top: clamp(0.5rem, 1vh, 0.8rem);
+  min-height: 0;
+}
+.metric-col .cat {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.metric-col .desc {
+  font-size: clamp(0.7rem, 0.9vw, 0.82rem);
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+.metric-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 0.6vh, 0.45rem);
+  margin-top: clamp(0.3rem, 0.7vh, 0.5rem);
+}
+.metric-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: baseline;
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: clamp(0.2rem, 0.4vh, 0.3rem);
+}
+.metric-list .name {
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 0.86vw, 0.78rem);
+  color: var(--ink);
+}
+.metric-list .target {
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.78vw, 0.72rem);
+  color: var(--accent);
+  font-weight: 500;
+}
+@media (max-width: 900px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+/* ===========================================
+   Slide 12 — 監控架構
+   =========================================== */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) auto repeat(1, 1fr);
+  align-items: center;
+  gap: clamp(0.4rem, 1vw, 1rem);
+  margin: clamp(1rem, 3vh, 2rem) 0;
+}
+.flow-step {
+  border: 2px solid var(--ink);
+  padding: clamp(0.6rem, 1.2vw, 1rem);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.2rem, 0.4vh, 0.3rem);
+}
+.flow-step.accent { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.flow-step .lab {
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.72vw, 0.68rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.flow-step .name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.85rem, 1.3vw, 1.1rem);
+  text-transform: uppercase;
+}
+.flow-arrow {
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, 1.8vw, 1.5rem);
+  color: var(--accent);
+  text-align: center;
+  font-weight: 700;
+}
+.dashboard-sections {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(0.4rem, 1vw, 0.9rem);
+  margin-top: auto;
+}
+.dash-tile {
+  border: 1px solid var(--ink);
+  padding: clamp(0.5rem, 1vw, 0.8rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.dash-tile .num {
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.7vw, 0.65rem);
+  color: var(--accent);
+  letter-spacing: 0.2em;
+}
+.dash-tile .nm {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.78rem, 1.1vw, 0.95rem);
+  text-transform: uppercase;
+}
+.dash-tile .ds {
+  font-size: clamp(0.65rem, 0.82vw, 0.75rem);
+  color: var(--ink-muted);
+  line-height: 1.35;
+}
+@media (max-width: 900px) {
+  .flow { grid-template-columns: 1fr; }
+  .flow-arrow { transform: rotate(90deg); }
+  .dashboard-sections { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===========================================
+   Slide 13 — Dashboard Drill-Down
+   =========================================== */
+.dash-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(0.5rem, 1.2vw, 1rem);
+  height: 100%;
+  min-height: 0;
+}
+.dash-detail-card {
+  border: 2px solid var(--ink);
+  padding: clamp(0.55rem, 1.2vw, 0.95rem);
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  gap: clamp(0.2rem, 0.5vh, 0.4rem);
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+.dash-detail-card .num {
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.72vw, 0.68rem);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.dash-detail-card h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+.dash-detail-card .panels {
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.72vw, 0.66rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: clamp(0.18rem, 0.35vh, 0.3rem);
+}
+.dash-detail-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.18rem, 0.4vh, 0.3rem);
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.82vw, 0.74rem);
+  color: var(--ink);
+  line-height: 1.4;
+}
+.dash-detail-card ul li {
+  position: relative;
+  padding-left: 0.9em;
+}
+.dash-detail-card ul li::before {
+  content: '·';
+  color: var(--accent);
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+.dash-detail-card .threshold {
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.74vw, 0.68rem);
+  color: var(--ink-muted);
+  border-top: 1px solid var(--rule-soft);
+  padding-top: clamp(0.18rem, 0.35vh, 0.3rem);
+}
+.dash-detail-card .threshold .red { color: var(--accent); font-weight: 500; }
+
+@media (max-width: 900px) {
+  .dash-detail-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+}
+
+/* ===========================================
+   Slide 14 — CI/CD + Security
+   =========================================== */
+.cicd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  height: 100%;
+  align-items: stretch;
+  min-height: 0;
+}
+.cicd-card {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.7rem);
+  border-left: 4px solid var(--accent);
+  padding-left: clamp(0.7rem, 1.5vw, 1.2rem);
+  min-height: 0;
+}
+.cicd-card h3 { font-size: clamp(1.1rem, 1.8vw, 1.5rem); }
+.cicd-card .lede {
+  color: var(--ink-muted);
+  font-size: clamp(0.8rem, 1vw, 0.92rem);
+  line-height: 1.5;
+}
+.workflow-row {
+  display: grid;
+  grid-template-columns: clamp(110px, 14vw, 170px) 1fr;
+  gap: clamp(0.5rem, 1vw, 1rem);
+  align-items: baseline;
+  padding: clamp(0.3rem, 0.6vh, 0.5rem) 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+}
+.workflow-row .wf {
+  color: var(--accent);
+  word-break: break-all;
+}
+.workflow-row .when {
+  color: var(--ink-muted);
+}
+@media (max-width: 800px) { .cicd-grid { grid-template-columns: 1fr; } }
+
+/* ===========================================
+   Slide 14 — 結語
+   =========================================== */
+.slide-end .end-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 2.5rem);
+  align-items: end;
+  height: 100%;
+  padding-block: clamp(1rem, 4vh, 3rem);
+  position: relative;
+}
+.slide-end .end-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 6vw, 5rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
+.slide-end .end-title .red { color: var(--accent); }
+.slide-end .links {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1vh, 0.7rem);
+  border-top: 2px solid var(--ink);
+  padding-top: clamp(0.5rem, 1vh, 0.8rem);
+}
+.slide-end .link-row {
+  display: grid;
+  grid-template-columns: clamp(80px, 10vw, 130px) 1fr;
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 0.95vw, 0.85rem);
+  gap: 0.8rem;
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: clamp(0.3rem, 0.5vh, 0.4rem);
+}
+.slide-end .link-row .lab {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-size: clamp(0.6rem, 0.78vw, 0.72rem);
+}
+
+/* ===========================================
+   進度條 + 導覽點
+   =========================================== */
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: var(--accent);
+  z-index: 9999;
+  width: 0%;
+  transition: width 0.2s ease-out;
+}
+.nav-dots {
+  position: fixed;
+  right: clamp(0.5rem, 1.5vw, 1.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vh, 10px);
+  z-index: 100;
+}
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s var(--ease);
+}
+.nav-dot.active { background: var(--accent); border-color: var(--accent); transform: scale(1.3); }
+.nav-dot:hover { background: var(--ink); }
+
+.kbd-hint {
+  position: fixed;
+  bottom: clamp(0.5rem, 1.5vh, 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: clamp(0.55rem, 0.7vw, 0.68rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  background: var(--bg);
+  padding: 0.3em 0.8em;
+  border: 1px solid var(--rule);
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* ===========================================
+   Inline Editing — 可在瀏覽器直接編輯
+   =========================================== */
+.edit-hotzone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 80px;
+  z-index: 10000;
+  cursor: pointer;
+}
+.edit-toggle {
+  position: fixed;
+  top: clamp(0.6rem, 1.5vh, 1rem);
+  left: clamp(0.6rem, 1.5vw, 1rem);
+  width: clamp(36px, 4vw, 44px);
+  height: clamp(36px, 4vw, 44px);
+  border: 2px solid var(--ink);
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: 50%;
+  z-index: 10001;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+.edit-toggle.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.edit-toggle:hover { transform: scale(1.08); }
+
+.edit-banner {
+  position: fixed;
+  top: clamp(0.6rem, 1.5vh, 1rem);
+  left: 50%;
+  transform: translate(-50%, -120%);
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.78vw, 0.72rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.5em 1em;
+  z-index: 10001;
+  transition: transform 0.4s var(--ease);
+}
+.edit-banner.active { transform: translate(-50%, 0); }
+.edit-banner .red { color: var(--accent); }
+
+body.edit-active [contenteditable="true"] {
+  outline: 1px dashed var(--accent);
+  outline-offset: 4px;
+  cursor: text;
+}
+body.edit-active [contenteditable="true"]:focus {
+  outline: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+</style>
+</head>
+<body>
+
+<!-- 進度條 -->
+<div class="progress-bar"></div>
+
+<!-- 導覽點（JS 自動生成） -->
+<nav class="nav-dots" aria-label="Slide navigation"></nav>
+
+<!-- 鍵盤提示 -->
+<div class="kbd-hint">↑ ↓ · SPACE · E to edit</div>
+
+<!-- 編輯按鈕 + Hotzone -->
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="編輯模式 (E)" aria-label="Toggle edit mode">✎</button>
+<div class="edit-banner" id="editBanner">
+  編輯模式 · <span class="red">CTRL+S</span> 儲存 · <span class="red">E</span> 結束
+</div>
+
+<!-- ===== Slide 1 — 封面 ===== -->
+<section class="slide slide-cover" data-title="封面">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>K6 / Classroom Load Test</span>
+      <span class="right"><span class="dot">●</span> Internal Briefing</span>
+      <span>2026 / Q2</span>
+    </header>
+
+    <div class="body-row">
+      <div class="deco-square reveal-scale"></div>
+      <div class="deco-circle reveal-scale"></div>
+
+      <div class="index reveal">01</div>
+      <div class="title-block">
+        <div class="kicker reveal">A Field Guide for ClassSwift</div>
+        <h1 class="title reveal" contenteditable="false">負載<span class="invert">測試</span><br>使用 <span class="red">指南</span></h1>
+        <div class="meta-row reveal">
+          <div class="meta-cell"><span class="lab">Project</span>ClassSwift</div>
+          <div class="meta-cell"><span class="lab">Stack</span>K6 · TypeScript</div>
+          <div class="meta-cell"><span class="lab">Scenarios</span>4 套</div>
+          <div class="meta-cell"><span class="lab">Audience</span>SRE / QA / Engineering</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>ViewSonic · ClassSwift Team</span>
+      <span><span class="accent">內部分享</span> — 同仁說明</span>
+      <span>P.01 / 15</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 2 — 為什麼要做負載測試 ===== -->
+<section class="slide" data-title="為什麼">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>02 — Why this matters</span>
+      <span class="right"><span class="dot">●</span> 動機與目標</span>
+      <span>P.02 / 15</span>
+    </header>
+
+    <div class="three-col">
+      <div class="col reveal">
+        <div class="num">→ 01</div>
+        <h3 class="sub">找出系統<br>Breaking Point</h3>
+        <p>用階梯式 VU 逐步加壓，量出教室在 50 / 100 / 200 學生下會不會還能準時收到 Quiz。</p>
+      </div>
+      <div class="col reveal">
+        <div class="num">→ 02</div>
+        <h3 class="sub">驗證真實<br>上課情境</h3>
+        <p>模擬 30 分鐘課程、5 次測驗、學生答題、老師公布答案。不是亂打 API，是真課堂。</p>
+      </div>
+      <div class="col reveal">
+        <div class="num">→ 03</div>
+        <h3 class="sub">建立可量化<br>的指標體系</h3>
+        <p>連線成功率、選座 p95、Event Delivery 延遲，全部進 InfluxDB，Grafana 看趨勢。</p>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>K6 + TypeScript + Vite</span>
+      <span class="accent">Stable, repeatable, observable</span>
+      <span>2026 / Q2</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 3 — 專案結構 ===== -->
+<section class="slide" data-title="專案結構">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>03 — Project Layout</span>
+      <span class="right"><span class="dot">●</span> 資料夾與技術棧</span>
+      <span>P.03 / 15</span>
+    </header>
+
+    <div class="split-2">
+      <div class="tree reveal" contenteditable="false"><span class="com"># 專案結構（精簡版）</span>
+ocelot-k6-script/
+├── src/
+│   ├── lib/                <span class="com"># 共用模組</span>
+│   │   ├── api.ts          <span class="com"># HTTP API</span>
+│   │   ├── socketio.ts     <span class="com"># Socket.IO 工具</span>
+│   │   ├── metrics.ts      <span class="com"># K6 metrics 定義</span>
+│   │   └── config.ts       <span class="com"># 環境變數</span>
+│   └── scenarios/          <span class="com"># <span class="red">測試場景</span></span>
+│       ├── multi-room.ts
+│       ├── specified-one-room.ts
+│       ├── load-test.ts
+│       └── stress-test.ts
+├── monitoring/             <span class="com"># InfluxDB + Grafana</span>
+├── .github/workflows/      <span class="com"># CI + 安全掃描</span>
+├── dist/                   <span class="com"># 編譯輸出</span>
+├── vite.config.ts
+└── package.json</div>
+
+      <div class="stack-list">
+        <div class="stack-row reveal"><span class="lab">Runtime</span><span class="val">K6</span></div>
+        <div class="stack-row reveal"><span class="lab">Lang</span><span class="val">TypeScript</span></div>
+        <div class="stack-row reveal"><span class="lab">Bundler</span><span class="val">Vite</span></div>
+        <div class="stack-row reveal"><span class="lab">Pkg</span><span class="val">pnpm</span></div>
+        <div class="stack-row reveal"><span class="lab">Metrics</span><span class="val">InfluxDB</span></div>
+        <div class="stack-row reveal"><span class="lab">Dashboard</span><span class="val">Grafana</span></div>
+        <div class="stack-row reveal"><span class="lab">CI</span><span class="val">GitHub Actions</span></div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>src/scenarios/ 是入口</span>
+      <span class="accent">每個 .ts 都會被 vite build 成 dist/*.js</span>
+      <span>P.03</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 4 — 快速開始 ===== -->
+<section class="slide" data-title="快速開始">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>04 — Quick Start</span>
+      <span class="right"><span class="dot">●</span> 4 步驟跑起來</span>
+      <span>P.04 / 15</span>
+    </header>
+
+    <div class="steps-4">
+      <div class="step-card reveal">
+        <div class="step-num">01</div>
+        <h3 class="sub">安裝依賴</h3>
+        <p style="font-size:var(--small-size);color:var(--ink-muted);line-height:1.45;">先裝 K6 與 Node 套件</p>
+        <div class="code">brew install k6
+pnpm install</div>
+      </div>
+
+      <div class="step-card reveal">
+        <div class="step-num">02</div>
+        <h3 class="sub">設定環境變數</h3>
+        <p style="font-size:var(--small-size);color:var(--ink-muted);line-height:1.45;">填入 token、org id、URL</p>
+        <div class="code">cp .env.example \
+   .env.local
+vim .env.local</div>
+      </div>
+
+      <div class="step-card reveal">
+        <div class="step-num">03</div>
+        <h3 class="sub">編譯 TS</h3>
+        <p style="font-size:var(--small-size);color:var(--ink-muted);line-height:1.45;">vite 把 .ts 編成 dist/*.js</p>
+        <div class="code">pnpm build
+
+<span class="com"># 或監聽變更</span>
+pnpm build:watch</div>
+      </div>
+
+      <div class="step-card reveal">
+        <div class="step-num">04</div>
+        <h3 class="sub">執行測試</h3>
+        <p style="font-size:var(--small-size);color:var(--ink-muted);line-height:1.45;">載入 env 後 k6 run</p>
+        <div class="code">source .env.local
+pnpm test:multi-room
+<span class="com"># 或</span>
+k6 run dist/multi-room.js</div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>Tip · 想看資料？</span>
+      <span class="accent">加 :influxdb 後綴 → 自動輸出到 InfluxDB</span>
+      <span>e.g. pnpm test:multi-room:influxdb</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 5 — 環境變數 ===== -->
+<section class="slide" data-title="環境變數">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>05 — Environment Variables</span>
+      <span class="right"><span class="dot">●</span> 必填 vs 選填</span>
+      <span>P.05 / 15</span>
+    </header>
+
+    <div class="env-grid">
+      <div class="env-col reveal">
+        <div class="head-row">
+          <h2 class="heading">必填 <span class="red">×4</span></h2>
+          <span class="badge req">Required</span>
+        </div>
+        <div class="env-row"><span class="key">TEACHER_TOKEN</span><span class="desc">老師 JWT Token（呼叫 HTTP API）</span></div>
+        <div class="env-row"><span class="key">TEACHER_WS_TOKEN</span><span class="desc">老師 WebSocket 連線 Token</span></div>
+        <div class="env-row"><span class="key">ORG_ID</span><span class="desc">組織 ID</span></div>
+        <div class="env-row"><span class="key">COLLECTION_ID</span><span class="desc">Quiz Collection ID（用於建立測驗）</span></div>
+        <div class="env-row"><span class="key">+ NUM_ROOMS / ROOM_ID</span><span class="desc">看場景：multi 用 NUM_ROOMS、specified 用 ROOM_ID</span></div>
+      </div>
+
+      <div class="env-col reveal">
+        <div class="head-row">
+          <h2 class="heading">選填 <span class="red">×N</span></h2>
+          <span class="badge opt">Optional</span>
+        </div>
+        <div class="env-row"><span class="key">API_URL</span><span class="desc">預設 http://localhost:8000</span></div>
+        <div class="env-row"><span class="key">SOCKET_URL</span><span class="desc">預設同 API_URL</span></div>
+        <div class="env-row"><span class="key">STUDENTS_PER_ROOM</span><span class="desc">每間教室學生數，預設 50</span></div>
+        <div class="env-row"><span class="key">TEACHER_DELAY</span><span class="desc">老師延遲啟動秒數，預設 30</span></div>
+        <div class="env-row"><span class="key">REGION / DISPLAY_NAME</span><span class="desc">地區與老師顯示名稱，預設 TW / Teacher</span></div>
+        <div class="env-row"><span class="key">K6_INFLUXDB_ADDR</span><span class="desc">輸出指標到 InfluxDB 的位址</span></div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>放在 .env.local（git ignored）</span>
+      <span class="accent">執行前一定要 source .env.local</span>
+      <span>P.05</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 6 — 4 場景一覽 ===== -->
+<section class="slide" data-title="4 個場景">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>06 — Test Scenarios Overview</span>
+      <span class="right"><span class="dot">●</span> 4 套場景一覽</span>
+      <span>P.06 / 15</span>
+    </header>
+
+    <div class="scenario-grid">
+      <div class="scenario-card reveal">
+        <div class="num">01 / Multi-Room</div>
+        <h3>多教室<br>壓力測試</h3>
+        <p>同時開 N 間教室，每間 1 老師 + M 學生，並行跑完整一節短課。驗證水平擴展。</p>
+        <div class="tag">k6 run dist/multi-room.js</div>
+      </div>
+
+      <div class="scenario-card reveal">
+        <div class="num">02 / Specified-One-Room</div>
+        <h3>指定<br>單一教室</h3>
+        <p>給定既有 ROOM_ID，學生 + 老師雙場景架構，適合對特定環境做重現性測試。</p>
+        <div class="tag">k6 run dist/specified-one-room.js</div>
+      </div>
+
+      <div class="scenario-card reveal">
+        <div class="num">03 / Load-Test</div>
+        <h3>長時間<br>負載穩定性</h3>
+        <p>30–45 分鐘真實課堂、5 次測驗、每隔 5 分鐘出題。觀察記憶體 / 連線是否漂移。</p>
+        <div class="tag">k6 run dist/load-test.js</div>
+      </div>
+
+      <div class="scenario-card reveal">
+        <div class="num">04 / Stress-Test</div>
+        <h3>階梯式<br>壓力極限</h3>
+        <p>VU 階梯式爬升（ramping-vus），找 breaking point、auto-scaling、graceful degradation。</p>
+        <div class="tag">k6 run dist/stress-test.js</div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>選哪一套？</span>
+      <span class="accent">日常迴歸 → Multi-Room · 容量規劃 → Stress · 穩定性 → Load</span>
+      <span>P.06</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 7 — Multi-Room 詳解 ===== -->
+<section class="slide" data-title="Multi-Room">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>07 — Scenario · Multi-Room</span>
+      <span class="right"><span class="dot">●</span> 多教室並行</span>
+      <span>P.07 / 15</span>
+    </header>
+
+    <div class="scene-detail">
+      <div class="scene-left reveal">
+        <div class="kicker">01 / 多教室壓力測試</div>
+        <h2 class="heading">並行 <span class="red">N 間教室</span><br>各自一節短課</h2>
+        <p class="lede">每間教室都會走完「老師建課 → 學生選座 → 出題 → 答題 → 結束」整段流程。教室之間獨立並行，用來驗證系統在水平擴展下的行為。</p>
+
+        <div class="scene-spec">
+          <span class="k">Rooms</span><span>NUM_ROOMS（必填）</span>
+          <span class="k">Students</span><span>STUDENTS_PER_ROOM（預設 50）</span>
+          <span class="k">Duration</span><span>~155 秒 / room</span>
+          <span class="k">Best for</span><span>日常迴歸、CI 觸發、水平擴展驗證</span>
+        </div>
+      </div>
+
+      <div class="scene-right reveal">
+        <div class="lab">流程時間軸（per room）</div>
+        <div class="timeline"><span class="t">t=0s</span>     Teacher 建立 Lesson → 啟動課程
+        WebSocket 連線
+<span class="t">t=30s</span>    Students 開始連線 → 選座位
+        加入課程
+<span class="t">t=75s</span>    Teacher 建立 Quiz
+<span class="t">t=76-150s</span>  Students 收到 Quiz → 提交答案
+<span class="t">t=155s</span>   Teacher 結束 → 公開 → 關閉
+        結束課程</div>
+
+        <div class="lab" style="margin-top:auto;">執行指令</div>
+        <div class="cmd-block"><span class="com"># 4 間教室、每間 50 名學生</span>
+NUM_ROOMS=4 \
+TEACHER_TOKEN=xxx \
+TEACHER_WS_TOKEN=xxx \
+ORG_ID=xxx \
+k6 run dist/multi-room.js</div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>setup() 階段預先建立所有 rooms</span>
+      <span class="accent">每間教室共享一個 lessonId</span>
+      <span>P.07</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 8 — Specified-One-Room 詳解 ===== -->
+<section class="slide" data-title="Specified-One-Room">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>08 — Scenario · Specified-One-Room</span>
+      <span class="right"><span class="dot">●</span> 指定教室</span>
+      <span>P.08 / 15</span>
+    </header>
+
+    <div class="scene-detail">
+      <div class="scene-left reveal">
+        <div class="kicker">02 / 指定教室測試</div>
+        <h2 class="heading">既有教室 +<br><span class="red">雙場景架構</span></h2>
+        <p class="lede">傳入既有的 ROOM_ID，學生 50 個 VU + 老師 1 VU 分別跑各自場景，可重現特定環境的問題。</p>
+
+        <div class="scene-spec">
+          <span class="k">Room ID</span><span>ROOM_ID（必填，既有教室）</span>
+          <span class="k">Students</span><span>NUM_STUDENTS（預設 50）</span>
+          <span class="k">Duration</span><span>~60 秒</span>
+          <span class="k">Best for</span><span>重現特定問題、QA 驗收、環境煙霧測試</span>
+        </div>
+      </div>
+
+      <div class="scene-right reveal">
+        <div class="lab">雙場景時間軸</div>
+        <div class="timeline"><span class="com"># Students (50 VUs)</span>
+<span class="t">t=0-3s</span>   錯開連線 → WS → 選座 → 加入
+<span class="t">t=12s</span>    收到 Quiz → 思考 → 提交
+<span class="t">t=60s</span>    Timeout 斷線
+
+<span class="com"># Teacher (1 VU)</span>
+<span class="t">t=10s</span>    延遲啟動 → WS → 加入課程
+<span class="t">t=12s</span>    建立 Quiz
+<span class="t">t=52s</span>    結束 → 公開 → 關閉 → end</div>
+
+        <div class="lab" style="margin-top:auto;">執行指令</div>
+        <div class="cmd-block">ROOM_ID=xxx \
+TEACHER_TOKEN=xxx \
+ORG_ID=xxx \
+k6 run dist/specified-one-room.js</div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>學生與老師獨立 VU</span>
+      <span class="accent">適合驗證特定 room 的座位、Quiz 流程</span>
+      <span>P.08</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 9 — Load-Test 詳解 ===== -->
+<section class="slide" data-title="Load-Test">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>09 — Scenario · Load-Test</span>
+      <span class="right"><span class="dot">●</span> 30 分鐘真實課堂</span>
+      <span>P.09 / 15</span>
+    </header>
+
+    <div class="scene-detail">
+      <div class="scene-left reveal">
+        <div class="kicker">03 / 長時間負載穩定性</div>
+        <h2 class="heading">30–45 分鐘 +<br><span class="red">5 次測驗</span></h2>
+        <p class="lede">擬真一節完整課程：老師每隔 5 分鐘出題、學生答題、最後結束。觀察伺服器在持續壓力下的記憶體、連線、事件投遞是否會漂移。</p>
+
+        <div class="scene-spec">
+          <span class="k">Lesson</span><span>LESSON_DURATION（預設 30 分鐘）</span>
+          <span class="k">Quizzes</span><span>QUIZ_COUNT（預設 5）</span>
+          <span class="k">Interval</span><span>QUIZ_INTERVAL（預設 5 分鐘）</span>
+          <span class="k">Best for</span><span>記憶體洩漏、連線維持、長時間穩定性</span>
+        </div>
+      </div>
+
+      <div class="scene-right reveal">
+        <div class="lab">課堂節奏（students view）</div>
+        <div class="timeline"><span class="t">t=0-3s</span>    錯開連線 → 選座 → 加入
+<span class="t">t=2m</span>      收到 Quiz #1 → 提交
+<span class="t">t=7m</span>      收到 Quiz #2 → 提交
+<span class="t">t=12m</span>     收到 Quiz #3 → 提交
+<span class="t">t=17m</span>     收到 Quiz #4 → 提交
+<span class="t">t=22m</span>     收到 Quiz #5 → 提交
+<span class="t">t=30m</span>     收到 end_lesson → 斷線</div>
+
+        <div class="lab" style="margin-top:auto;">執行指令</div>
+        <div class="cmd-block">NUM_ROOMS=2 \
+LESSON_DURATION=30 \
+QUIZ_COUNT=5 \
+TEACHER_TOKEN=xxx \
+ORG_ID=xxx \
+k6 run dist/load-test.js</div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>跑得久 = 抓漂移</span>
+      <span class="accent">推薦搭配 InfluxDB 看趨勢</span>
+      <span>P.09</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 10 — Stress-Test 詳解 ===== -->
+<section class="slide" data-title="Stress-Test">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>10 — Scenario · Stress-Test</span>
+      <span class="right"><span class="dot">●</span> 階梯式壓力極限</span>
+      <span>P.10 / 15</span>
+    </header>
+
+    <div class="scene-left reveal" style="margin-bottom:clamp(0.5rem, 1vh, 0.8rem);">
+      <div class="kicker">04 / 階梯式壓力測試 · ramping-vus</div>
+      <h2 class="heading">逐步加壓 <span class="red">→ 找極限</span></h2>
+    </div>
+
+    <div class="stress-chart reveal">
+      <div class="y-axis">
+        <span>200</span><span>160</span><span>120</span><span>80</span><span>40</span><span>0</span>
+      </div>
+      <div class="x-axis">
+        <span>0s</span><span>S1</span><span>S2</span><span>S3</span><span>S4</span><span>S5</span><span>Recover</span>
+      </div>
+      <div class="bars">
+        <div class="bar" style="--h: 20%;"><span class="lbl">40</span></div>
+        <div class="bar" style="--h: 40%;"><span class="lbl">80</span></div>
+        <div class="bar" style="--h: 60%;"><span class="lbl">120</span></div>
+        <div class="bar" style="--h: 80%;"><span class="lbl">160</span></div>
+        <div class="bar" style="--h: 100%;"><span class="lbl">200</span></div>
+        <div class="bar recover" style="--h: 25%;"><span class="lbl">50</span></div>
+        <div class="bar recover" style="--h: 5%;"><span class="lbl">0</span></div>
+      </div>
+    </div>
+
+    <div class="stress-meta reveal">
+      <div><span class="lab">MAX_VUS</span>200（預設）</div>
+      <div><span class="lab">STAGES</span>5 階段 + Recovery</div>
+      <div><span class="lab">DURATION</span>30s ramp + 60s hold / 階段</div>
+      <div><span class="lab">指標</span>stress_connected · stress_seated</div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>1 老師持續連線 + 學生階梯式加壓</span>
+      <span class="accent">看哪一階開始失敗，就是 breaking point</span>
+      <span>P.10</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 11 — 指標體系 ===== -->
+<section class="slide" data-title="關鍵指標">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>11 — Metrics</span>
+      <span class="right"><span class="dot">●</span> 關鍵指標體系</span>
+      <span>P.11 / 15</span>
+    </header>
+
+    <div class="metrics-grid">
+      <!-- Rate -->
+      <div class="metric-col reveal">
+        <div class="cat">Rate</div>
+        <div class="desc">「N 次中成功幾次」— 用來訂 SLI / SLO 的成功率指標。</div>
+        <ul class="metric-list">
+          <li><span class="name">student_connected</span><span class="target">&gt; 90%</span></li>
+          <li><span class="name">student_seated</span><span class="target">&gt; 90%</span></li>
+          <li><span class="name">seat_within_3s</span><span class="target">&gt; 95%</span></li>
+          <li><span class="name">answers_submitted</span><span class="target">&gt; 80%</span></li>
+          <li><span class="name">teacher_connected</span><span class="target">&gt; 90%</span></li>
+          <li><span class="name">events_received</span><span class="target">&gt; 90%</span></li>
+        </ul>
+      </div>
+
+      <!-- Trend -->
+      <div class="metric-col reveal">
+        <div class="cat">Trend</div>
+        <div class="desc">時間分布 — 看 p95 / p99 表現。</div>
+        <ul class="metric-list">
+          <li><span class="name">seat_time</span><span class="target">&lt; 3000ms</span></li>
+          <li><span class="name">submit_time</span><span class="target">&lt; 3000ms</span></li>
+          <li><span class="name">ws_connect_time</span><span class="target">&lt; 500ms</span></li>
+          <li><span class="name">quiz_received_time</span><span class="target">—</span></li>
+          <li><span class="name">delivery_quiz_created</span><span class="target">→ Students</span></li>
+          <li><span class="name">delivery_student_submitted</span><span class="target">→ Teacher</span></li>
+        </ul>
+      </div>
+
+      <!-- Counter -->
+      <div class="metric-col reveal">
+        <div class="cat">Counter</div>
+        <div class="desc">事件計數 — 看「發生過幾次」。</div>
+        <ul class="metric-list">
+          <li><span class="name">ws_event_quiz_created</span><span class="target">event</span></li>
+          <li><span class="name">ws_event_student_submitted</span><span class="target">event</span></li>
+          <li><span class="name">ws_unexpected_close</span><span class="target">⚠ alert</span></li>
+          <li><span class="name">http_error_500 / 502 / 503</span><span class="target">⚠ alert</span></li>
+          <li><span class="name">http_success_choose_seat</span><span class="target">✓</span></li>
+          <li><span class="name">room_lesson_created</span><span class="target">setup</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>所有 metric 都帶 { room, student } 標籤</span>
+      <span class="accent">避免 InfluxDB 時間戳碰撞</span>
+      <span>P.11</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 12 — 監控架構 ===== -->
+<section class="slide" data-title="監控架構">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>12 — Monitoring Stack</span>
+      <span class="right"><span class="dot">●</span> InfluxDB + Grafana</span>
+      <span>P.12 / 15</span>
+    </header>
+
+    <div>
+      <div class="scene-left reveal">
+        <div class="kicker">資料流</div>
+        <h2 class="heading">k6 → InfluxDB → <span class="red">Grafana</span></h2>
+      </div>
+
+      <div class="flow reveal">
+        <div class="flow-step"><span class="lab">Source</span><span class="name">k6 run</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="lab">Storage</span><span class="name">InfluxDB</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step accent"><span class="lab">Visualize</span><span class="name">Grafana</span></div>
+      </div>
+
+      <div class="reveal" style="display:flex;flex-direction:column;gap:clamp(0.4rem,0.8vh,0.6rem);">
+        <div class="kicker" style="margin:0;color:var(--ink-muted);">Dashboard 區塊（k6-influxdb-dashboard.json）</div>
+        <div class="dashboard-sections">
+          <div class="dash-tile">
+            <span class="num">01</span>
+            <span class="nm">Overview</span>
+            <span class="ds">連線、選座、提交、事件、錯誤、HTTP 總數</span>
+          </div>
+          <div class="dash-tile">
+            <span class="num">02</span>
+            <span class="nm">Test Flow</span>
+            <span class="ds">事件累積曲線、bargauge 一覽</span>
+          </div>
+          <div class="dash-tile">
+            <span class="num">03</span>
+            <span class="nm">Performance</span>
+            <span class="ds">HTTP p95、WS handshake p95</span>
+          </div>
+          <div class="dash-tile">
+            <span class="num">04</span>
+            <span class="nm">Delivery</span>
+            <span class="ds">API 呼叫到 WS 事件投遞延遲</span>
+          </div>
+          <div class="dash-tile">
+            <span class="num">05</span>
+            <span class="nm">Errors</span>
+            <span class="ds">HTTP 錯誤依 status code 分佈</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>K6_INFLUXDB_PUSH_INTERVAL=1s</span>
+      <span class="accent">避免時間戳碰撞，保留每 VU 解析度</span>
+      <span>P.12</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 13 — Grafana Dashboard 各區塊細節 ===== -->
+<section class="slide" data-title="Dashboard 細節">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>13 — Dashboard Drill-Down</span>
+      <span class="right"><span class="dot">●</span> 每個面板在量什麼</span>
+      <span>P.13 / 15</span>
+    </header>
+
+    <div class="dash-detail-grid">
+      <div class="dash-detail-card reveal">
+        <div class="num">01 · Overview</div>
+        <h3>6 個 Stat<br>一眼看完</h3>
+        <div class="panels">stat panels</div>
+        <ul>
+          <li>students_connected · seated</li>
+          <li>answers_submitted</li>
+          <li>events_received</li>
+          <li>errors · http_requests</li>
+        </ul>
+      </div>
+
+      <div class="dash-detail-card reveal">
+        <div class="num">02 · Test Flow</div>
+        <h3>確認流程<br>是否完整</h3>
+        <div class="panels">bargauge + timeseries</div>
+        <ul>
+          <li>Event Summary（14 種 WS 事件）</li>
+          <li>Events Over Time（cumulative_sum）</li>
+          <li>含 unexpected_close · connection_error 警示</li>
+        </ul>
+      </div>
+
+      <div class="dash-detail-card reveal">
+        <div class="num">03 · Performance</div>
+        <h3>API p95<br>+ WS 握手</h3>
+        <div class="panels">timeseries + stat</div>
+        <ul>
+          <li>HTTP p95 by API（11 個 API）</li>
+          <li>choose_seat / submit_answers 重點看</li>
+          <li>WS Handshake p95</li>
+        </ul>
+        <div class="threshold">&lt; 500ms 綠 · <span class="red">&gt; 1000ms 紅</span></div>
+      </div>
+
+      <div class="dash-detail-card reveal">
+        <div class="num">04 · Event Delivery</div>
+        <h3>API → WS<br>投遞延遲</h3>
+        <div class="panels">bargauge · spread()</div>
+        <ul>
+          <li>quiz_created（Teacher → Students）</li>
+          <li>student_submitted（Students → Teacher）</li>
+          <li>finished · disclosed · closed · lesson_end</li>
+        </ul>
+        <div class="threshold">&lt; 3s 綠 · <span class="red">&gt; 10s 紅</span></div>
+      </div>
+
+      <div class="dash-detail-card reveal">
+        <div class="num">05 · Errors</div>
+        <h3>HTTP 錯誤<br>依狀態碼</h3>
+        <div class="panels">bargauge</div>
+        <ul>
+          <li>400 / 401 / 403 / 404 / 409</li>
+          <li>500 / 503</li>
+          <li>seat_409（選座衝突專屬追蹤）</li>
+        </ul>
+        <div class="threshold">0 綠 · ≥1 黃 · <span class="red">≥5 紅</span></div>
+      </div>
+
+      <div class="dash-detail-card reveal">
+        <div class="num">06 · Coverage</div>
+        <h3>Sent vs<br>Received</h3>
+        <div class="panels">bargauge · pair compare</div>
+        <ul>
+          <li>6 對事件：created · finished · disclosed</li>
+          <li>closed · end_lesson · student_submitted</li>
+          <li><span style="color:#7c3aed;font-weight:700;">紫</span>=sent · <span style="color:#2a8a2a;font-weight:700;">綠</span>=received</li>
+          <li>理想：received = sent × N 學生</li>
+        </ul>
+        <div class="threshold">完美對齊 ✓ · <span class="red">落差 = WS 漏收事件</span></div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>refresh 5s · 預設 15min · Schema v39</span>
+      <span class="accent">monitoring/k6-influxdb-dashboard.json</span>
+      <span>P.13</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 14 — CI/CD + 安全掃描 ===== -->
+<section class="slide" data-title="CI/CD">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>14 — CI / CD &amp; Security</span>
+      <span class="right"><span class="dot">●</span> GitHub Actions</span>
+      <span>P.14 / 15</span>
+    </header>
+
+    <div class="cicd-grid">
+      <div class="cicd-card reveal">
+        <div class="kicker">手動觸發測試</div>
+        <h3 class="sub">K6 Load Test Workflow</h3>
+        <p class="lede">到 repo → Actions → K6 Load Test → Run workflow，挑場景與參數，結果自動進 InfluxDB。</p>
+        <div class="workflow-row">
+          <span class="wf">scenario</span>
+          <span class="when">multi-room / specified / load / stress</span>
+        </div>
+        <div class="workflow-row">
+          <span class="wf">num_rooms</span>
+          <span class="when">multi-room / load-test</span>
+        </div>
+        <div class="workflow-row">
+          <span class="wf">max_vus / stages</span>
+          <span class="when">stress-test 專用</span>
+        </div>
+        <div class="workflow-row">
+          <span class="wf">Secrets</span>
+          <span class="when">TEACHER_TOKEN · ORG_ID · K6_INFLUXDB_ADDR …</span>
+        </div>
+      </div>
+
+      <div class="cicd-card reveal">
+        <div class="kicker">DevSecOps · 自動掃描</div>
+        <h3 class="sub">Security Scans (SAST + SCA)</h3>
+        <p class="lede">由 VSX-ViewSonic/edu-security-lab-va 提供的 reusable workflow，掃描結果以 GitHub Check 回饋。</p>
+        <div class="workflow-row">
+          <span class="wf">security-scan-pr.yaml</span>
+          <span class="when">每個 PR · 快速 gate</span>
+        </div>
+        <div class="workflow-row">
+          <span class="wf">security-scan-full.yaml</span>
+          <span class="when">push main · 每日排程 · 手動</span>
+        </div>
+        <div class="workflow-row">
+          <span class="wf">產品名稱</span>
+          <span class="when">edu/classswift/chinchilla-cat</span>
+        </div>
+        <div class="workflow-row">
+          <span class="wf">回饋方式</span>
+          <span class="when">PR / Commit Check 直接看到結果</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>不用本地跑也能驗證</span>
+      <span class="accent">CI 觸發 → InfluxDB → Grafana 一條龍</span>
+      <span>P.14</span>
+    </footer>
+  </div>
+</section>
+
+<!-- ===== Slide 14 — 結語 ===== -->
+<section class="slide slide-end" data-title="結語">
+  <div class="slide-grid">
+    <header class="head reveal">
+      <span>15 — Wrap Up</span>
+      <span class="right"><span class="dot">●</span> 結語與後續</span>
+      <span>P.15 / 15</span>
+    </header>
+
+    <div class="end-grid">
+      <div class="reveal">
+        <div class="kicker">Now over to you</div>
+        <div class="end-title">
+          開壓<br>
+          <span class="red">看 Dashboard</span><br>
+          找問題.
+        </div>
+      </div>
+
+      <div class="links reveal">
+        <div class="link-row"><span class="lab">README</span><span>./README.md</span></div>
+        <div class="link-row"><span class="lab">Dashboard 欄位</span><span>monitoring/DASHBOARD_FIELDS.md</span></div>
+        <div class="link-row"><span class="lab">Dashboard 簡報</span><span>docs/k6-monitoring-overview.html</span></div>
+        <div class="link-row"><span class="lab">場景原始碼</span><span>src/scenarios/*.ts</span></div>
+        <div class="link-row"><span class="lab">CI Workflow</span><span>.github/workflows/k6-load-test.yml</span></div>
+        <div class="link-row"><span class="lab">問題回報</span><span>GitHub Issues / Slack #classswift-perf</span></div>
+      </div>
+    </div>
+
+    <footer class="foot reveal">
+      <span>ViewSonic · ClassSwift Team</span>
+      <span class="accent">Q&amp;A — 歡迎提問</span>
+      <span>END · 2026 Q2</span>
+    </footer>
+  </div>
+</section>
+
+<script>
+/* ===========================================
+   投影片控制器
+   - Intersection Observer 觸發 .visible
+   - 鍵盤 / 滑鼠滾輪 / 觸控導覽
+   - 進度條 + 導覽點
+   =========================================== */
+class SlidePresentation {
+  constructor() {
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.currentSlide = 0;
+    this.navDotsContainer = document.querySelector('.nav-dots');
+    this.progressBar = document.querySelector('.progress-bar');
+
+    this.setupIntersectionObserver();
+    this.setupKeyboardNav();
+    this.setupTouchNav();
+    this.setupProgressBar();
+    this.setupNavDots();
+  }
+
+  setupIntersectionObserver() {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+          entry.target.classList.add('visible');
+          this.currentSlide = this.slides.indexOf(entry.target);
+          this.updateNavDots();
+        }
+      });
+    }, { threshold: [0.5] });
+
+    this.slides.forEach(slide => observer.observe(slide));
+  }
+
+  setupKeyboardNav() {
+    document.addEventListener('keydown', (e) => {
+      // 編輯模式中按鍵就交給 contenteditable
+      if (document.body.classList.contains('edit-active') &&
+          e.target.getAttribute('contenteditable') === 'true') return;
+
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        this.goTo(this.currentSlide + 1);
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        this.goTo(this.currentSlide - 1);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        this.goTo(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        this.goTo(this.slides.length - 1);
+      }
+    });
+  }
+
+  setupTouchNav() {
+    let startY = 0;
+    document.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      const dy = startY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) > 50) {
+        this.goTo(this.currentSlide + (dy > 0 ? 1 : -1));
+      }
+    }, { passive: true });
+  }
+
+  setupProgressBar() {
+    document.addEventListener('scroll', () => {
+      const scrollTop = window.scrollY;
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = (scrollTop / totalHeight) * 100;
+      this.progressBar.style.width = pct + '%';
+    }, { passive: true });
+  }
+
+  setupNavDots() {
+    // 重要：建立前先清空，避免 outerHTML 還原時 dots 重複堆疊
+    this.navDotsContainer.innerHTML = '';
+    this.slides.forEach((slide, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'nav-dot';
+      btn.setAttribute('aria-label', `Slide ${i + 1}: ${slide.dataset.title || ''}`);
+      btn.addEventListener('click', () => this.goTo(i));
+      this.navDotsContainer.appendChild(btn);
+    });
+    this.updateNavDots();
+  }
+
+  updateNavDots() {
+    const dots = this.navDotsContainer.querySelectorAll('.nav-dot');
+    dots.forEach((d, i) => d.classList.toggle('active', i === this.currentSlide));
+  }
+
+  goTo(idx) {
+    if (idx < 0 || idx >= this.slides.length) return;
+    this.slides[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+/* ===========================================
+   Inline Editor — 可在瀏覽器直接編輯
+   Hover 左上 hotzone 或按 E 進入編輯模式
+   Ctrl+S 匯出 / 自動 localStorage 存檔
+   =========================================== */
+class InlineEditor {
+  constructor() {
+    this.isActive = false;
+    this.toggle = document.getElementById('editToggle');
+    this.banner = document.getElementById('editBanner');
+    this.storageKey = 'k6-slides-content';
+    this.editableSelector = 'h1.title, h2.heading, h3.sub, .kicker, .lede, p, .meta-cell, .stack-row .val, .step-card h3, .scenario-card h3, .scenario-card p, .end-title, .link-row span:not(.lab), .metric-list .name, .dash-tile .nm, .dash-tile .ds, .dash-detail-card h3, .dash-detail-card li';
+
+    this.makeEditable();
+    this.restoreContent();
+    this.setupHotzone();
+    this.setupKeyboard();
+    this.setupAutosave();
+  }
+
+  makeEditable() {
+    document.querySelectorAll(this.editableSelector).forEach(el => {
+      // 編輯狀態用 class 控制，不改 contenteditable 屬性，避免出口時殘留
+      el.dataset.editable = 'true';
+    });
+  }
+
+  toggleEditMode() {
+    this.isActive = !this.isActive;
+    document.body.classList.toggle('edit-active', this.isActive);
+    this.toggle.classList.toggle('active', this.isActive);
+    this.banner.classList.toggle('active', this.isActive);
+    this.toggle.textContent = this.isActive ? '✓' : '✎';
+
+    document.querySelectorAll('[data-editable]').forEach(el => {
+      if (this.isActive) {
+        el.setAttribute('contenteditable', 'true');
+      } else {
+        el.removeAttribute('contenteditable');
+      }
+    });
+
+    if (this.isActive) {
+      // 自動聚焦提示
+      setTimeout(() => this.banner.classList.add('show'), 100);
+    }
+  }
+
+  setupHotzone() {
+    const hotzone = document.querySelector('.edit-hotzone');
+    let hideTimeout = null;
+
+    hotzone.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+      this.toggle.classList.add('show');
+    });
+    hotzone.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        if (!this.isActive) this.toggle.classList.remove('show');
+      }, 400);
+    });
+    this.toggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+    this.toggle.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => {
+        if (!this.isActive) this.toggle.classList.remove('show');
+      }, 400);
+    });
+
+    this.toggle.addEventListener('click', () => this.toggleEditMode());
+    hotzone.addEventListener('click', () => this.toggleEditMode());
+  }
+
+  setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+      // E 進入 / 結束編輯（不影響正在編輯的 contenteditable 元素）
+      if ((e.key === 'e' || e.key === 'E') &&
+          !e.target.getAttribute('contenteditable')) {
+        e.preventDefault();
+        this.toggleEditMode();
+      }
+      // Ctrl+S 匯出檔案
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && this.isActive) {
+        e.preventDefault();
+        this.exportFile();
+      }
+    });
+  }
+
+  setupAutosave() {
+    document.addEventListener('input', (e) => {
+      if (e.target.getAttribute('contenteditable') === 'true') {
+        this.saveContent();
+      }
+    });
+  }
+
+  saveContent() {
+    const data = {};
+    document.querySelectorAll('[data-editable]').forEach((el, i) => {
+      data[i] = el.innerHTML;
+    });
+    localStorage.setItem(this.storageKey, JSON.stringify(data));
+  }
+
+  restoreContent() {
+    try {
+      const data = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
+      document.querySelectorAll('[data-editable]').forEach((el, i) => {
+        if (data[i] !== undefined) el.innerHTML = data[i];
+      });
+    } catch (e) { /* 沒儲存就略過 */ }
+  }
+
+  exportFile() {
+    // 重要：匯出前要把編輯狀態剝掉，避免存出去的檔案永遠停在編輯模式
+    const editableEls = Array.from(document.querySelectorAll('[contenteditable]'));
+    editableEls.forEach(el => el.removeAttribute('contenteditable'));
+    document.body.classList.remove('edit-active');
+    this.toggle.classList.remove('active', 'show');
+    this.banner.classList.remove('active', 'show');
+
+    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+    // 還原編輯狀態，使用者可以繼續改
+    document.body.classList.add('edit-active');
+    editableEls.forEach(el => el.setAttribute('contenteditable', 'true'));
+    this.toggle.classList.add('active');
+    this.banner.classList.add('active');
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'k6-classroom-load-test-guide.html';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+}
+
+new SlidePresentation();
+new InlineEditor();
+</script>
+</body>
+</html>

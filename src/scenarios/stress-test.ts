@@ -7,20 +7,27 @@
  * - 驗證 graceful degradation
  *
  * Usage:
- *   npm run build && k6 run dist/stress-test.js
+ *   source .env.local && pnpm test:stress-test
+ *   source .env.local && pnpm test:stress-test:influxdb
+ *
+ *   覆寫環境變數可 inline：
+ *     MAX_VUS=500 STAGES=10 STAGE_DURATION=120s pnpm test:stress-test:influxdb
  *
  * 環境變數:
- *   MAX_VUS: 最大虛擬用戶數 (預設 200)
- *   STAGE_DURATION: 每階段持續時間秒數 (預設 60)
+ *   MAX_VUS:        最大虛擬用戶數 (預設 50，對齊 STUDENTS_PER_ROOM 預設值)
+ *   STAGES:         階梯數 (預設 5)
+ *   STAGE_DURATION: 每階段持續時間 (預設 60s)
  */
 
 import { sleep, check } from 'k6';
 import ws from 'k6/ws';
+import exec from 'k6/execution';
 import { Options } from 'k6/options';
 import { Counter, Rate, Trend } from 'k6/metrics';
 
 import {
     CONFIG,
+    STUDENTS_PER_ROOM,
     getStudentWsUrl,
     getTeacherWsUrl,
     getWsHeaders,
@@ -41,16 +48,20 @@ import {
     endLesson,
     chooseSeat,
     createQuizzes,
+    fetchQuiz,
+    submitAnswers,
     finishQuiz,
     closeQuiz,
     discloseQuiz,
 } from '../lib/api';
 
+import { wsConnection, wsEvents, deliveryTs } from '../lib/metrics';
+
 // K6 環境變數
 declare const __ENV: Record<string, string | undefined>;
 
 // === 配置 ===
-const MAX_VUS = parseInt(__ENV.MAX_VUS || '200', 10);
+const MAX_VUS = parseInt(__ENV.MAX_VUS || '50', 10);
 const STAGE_DURATION = __ENV.STAGE_DURATION || '60s';
 const STAGES = parseInt(__ENV.STAGES || '5', 10);
 
@@ -85,16 +96,20 @@ function generateStages(): Array<{ duration: string; target: number }> {
     return stages;
 }
 
-// 計算測試總時長 (用於老師 scenario)
-function calculateTotalDuration(): string {
+// 計算測試總時長
+function calculateTotalDurationMs(): number {
     const stages = generateStages();
     let totalSeconds = 0;
     for (const stage of stages) {
         const match = stage.duration.match(/(\d+)s/);
         if (match) totalSeconds += parseInt(match[1], 10);
     }
-    // 額外加 60 秒緩衝
-    return `${totalSeconds + 60}s`;
+    return totalSeconds * 1000;
+}
+
+// 老師 scenario maxDuration (額外加 60 秒緩衝)
+function calculateTotalDuration(): string {
+    return `${calculateTotalDurationMs() / 1000 + 60}s`;
 }
 
 export const options: Options = {
@@ -135,18 +150,22 @@ interface SetupData {
 
 // === Setup: 創建測試用教室 ===
 export function setup(): SetupData {
+    // 座位數需 ≥ MAX_VUS，否則後段 ramping 的 VU 會全部選座 409
+    const seatCapacity = Math.max(STUDENTS_PER_ROOM, MAX_VUS);
+
     console.log('='.repeat(70));
     console.log('STRESS TEST - RAMPING VUS WITH TEACHER');
     console.log('='.repeat(70));
     console.log(`API: ${CONFIG.API_URL}`);
     console.log(`Max VUs: ${MAX_VUS} | Stages: ${STAGES} | Stage Duration: ${STAGE_DURATION}`);
+    console.log(`Seat Capacity: ${seatCapacity} (STUDENTS_PER_ROOM=${STUDENTS_PER_ROOM}, MAX_VUS=${MAX_VUS})`);
     console.log(`Generated ${generateStages().length} stages`);
     console.log(`Total Duration: ${calculateTotalDuration()}`);
     console.log('Scenarios: 1 Teacher + Ramping Students');
     console.log('='.repeat(70));
 
     // 創建一個大教室供所有 VU 使用
-    const roomId = createRoom(0);
+    const roomId = createRoom(0, seatCapacity);
     if (!roomId) throw new Error('Failed to create room for stress test');
 
     const lessonId = createLesson(roomId);
@@ -172,7 +191,13 @@ export function teacherScenario(data: SetupData): void {
     ws.connect(wsUrl, { headers: getWsHeaders(CONFIG.TEACHER_ID) }, socket => {
         socket.on('open', () => {
             teacherConnected.add(1);
+            wsConnection.connected.add(1);
             console.log('[Teacher] WebSocket connected');
+        });
+
+        socket.on('close', () => {
+            wsConnection.disconnected.add(1);
+            console.log('[Teacher] WebSocket closed');
         });
 
         socket.on('message', (msg: string) => {
@@ -198,6 +223,7 @@ export function teacherScenario(data: SetupData): void {
                 case 'connect':
                     if (parsed.namespace === TEACHER_NAMESPACE && !namespaceConnected) {
                         namespaceConnected = true;
+                        wsConnection.namespaceConnected.add(1);
                         console.log('[Teacher] Namespace connected');
 
                         socket.send(encodeEvent(TEACHER_NAMESPACE, 'join_lesson', {
@@ -205,6 +231,7 @@ export function teacherScenario(data: SetupData): void {
                             user_id: CONFIG.TEACHER_ID,
                             role: 'teacher',
                         }));
+                        wsConnection.teacherJoinLessonSent.add(1);
                         console.log(`[Teacher] Joined lesson: ${lessonId}`);
 
                         // 等待學生加入後創建測驗
@@ -213,6 +240,7 @@ export function teacherScenario(data: SetupData): void {
                             quizCreatedFlag = !!batchId;
                             quizCreated.add(quizCreatedFlag ? 1 : 0);
                             if (batchId) {
+                                deliveryTs.quizCreated.add(Date.now(), { room: roomId, role: 'teacher' });
                                 console.log(`[Teacher] Quiz created: ${batchId}`);
                             }
                         }, 30000);  // 30 秒後創建測驗
@@ -222,7 +250,8 @@ export function teacherScenario(data: SetupData): void {
                 case 'event':
                     if (parsed.namespace === TEACHER_NAMESPACE) {
                         if (parsed.event === 'batch_quizzes_student_submitted') {
-                            console.log('[Teacher] Student submitted answer');
+                            wsEvents.studentSubmitted.add(1);
+                            deliveryTs.studentSubmitted.add(Date.now(), { room: roomId, role: 'teacher' });
                         }
                     }
                     break;
@@ -232,32 +261,32 @@ export function teacherScenario(data: SetupData): void {
         socket.on('error', (e: Error) => {
             console.error(`[Teacher] WS error: ${e}`);
             stressErrors.add(1);
+            wsConnection.error.add(1);
             teacherConnected.add(0);
         });
 
         // 計算老師需要保持連線的時間
-        const stages = generateStages();
-        let totalMs = 0;
-        for (const stage of stages) {
-            const match = stage.duration.match(/(\d+)s/);
-            if (match) totalMs += parseInt(match[1], 10) * 1000;
-        }
+        const totalMs = calculateTotalDurationMs();
 
         // 在測試快結束時結束課程
         socket.setTimeout(() => {
             console.log('[Teacher] Finishing up...');
             if (quizCreatedFlag && batchId) {
                 finishQuiz(lessonId, batchId);
+                deliveryTs.quizFinished.add(Date.now(), { room: roomId, role: 'teacher' });
                 console.log('[Teacher] Quiz finished');
                 sleep(1);
                 discloseQuiz(lessonId, batchId);
+                deliveryTs.quizDisclosed.add(Date.now(), { room: roomId, role: 'teacher' });
                 console.log('[Teacher] Quiz disclosed');
                 sleep(1);
                 closeQuiz(lessonId, batchId);
+                deliveryTs.quizClosed.add(Date.now(), { room: roomId, role: 'teacher' });
                 console.log('[Teacher] Quiz closed');
                 sleep(1);
             }
             endLesson(lessonId);
+            deliveryTs.lessonEnd.add(Date.now(), { room: roomId, role: 'teacher' });
             lessonEnded.add(1);
             console.log('[Teacher] Lesson ended');
             socket.close();
@@ -269,19 +298,32 @@ export function teacherScenario(data: SetupData): void {
 export function stressScenario(data: SetupData): void {
     const { roomId, lessonId } = data;
     const deviceId = uuid();
-    const studentNum = Math.floor(Math.random() * 9999);
+    // 用 VU id 當 serial_number，避免 random 撞號導致後端 400
+    const studentNum = exec.vu.idInInstance;
     const wsUrl = getStudentWsUrl();
 
     let connected = false;
     let seated = false;
     let studentId: string | null = null;
     let socketToken: string | null = null;
+    let endLessonReceived = false;
+
+    const tags = { room: roomId, student: String(studentNum) };
+    const deliveryTags = { room: roomId, role: 'student', student: String(studentNum) };
 
     // 嘗試連線
     ws.connect(wsUrl, { headers: getWsHeaders(deviceId) }, socket => {
         socket.on('open', () => {
             connected = true;
             stressConnected.add(1);
+            wsConnection.connected.add(1, tags);
+        });
+
+        socket.on('close', () => {
+            (endLessonReceived
+                ? wsConnection.disconnected
+                : wsConnection.unexpectedClose
+            ).add(1, tags);
         });
 
         socket.on('message', (msg: string) => {
@@ -300,6 +342,7 @@ export function stressScenario(data: SetupData): void {
                 case 'connect':
                     if (parsed.namespace === NAMESPACE) {
                         const nsSid = (parsed.data?.sid as string) || '';
+                        wsConnection.namespaceConnected.add(1, tags);
 
                         // 嘗試選座
                         const startTime = Date.now();
@@ -319,6 +362,7 @@ export function stressScenario(data: SetupData): void {
                                 role: 'student',
                                 access_token: socketToken,
                             }));
+                            wsConnection.joinLessonSent.add(1, tags);
                         } else {
                             stressSeated.add(0);
                             stressErrors.add(1);
@@ -327,11 +371,49 @@ export function stressScenario(data: SetupData): void {
                     break;
 
                 case 'event':
-                    if (parsed.namespace === NAMESPACE && studentId) {
-                        // 可以在這裡處理 quiz 事件等
-                        if (parsed.event === 'end_lesson') {
-                            socket.close();
+                    if (parsed.namespace !== NAMESPACE || !studentId) break;
+
+                    switch (parsed.event) {
+                        case 'batch_quizzes_created': {
+                            wsEvents.quizCreated.add(1, tags);
+                            deliveryTs.quizCreated.add(Date.now(), deliveryTags);
+
+                            // 抓題目並送答 (與 multi-room 行為一致)
+                            const eventData = parsed.data as { batch_quizzes_id?: string };
+                            const batchId = eventData?.batch_quizzes_id;
+                            if (!batchId || !studentId) break;
+
+                            sleep(0.5 + Math.random());
+                            const quiz = fetchQuiz(lessonId, studentId);
+                            if (quiz) {
+                                const submitted = submitAnswers(batchId, studentId, quiz);
+                                if (submitted) {
+                                    deliveryTs.studentSubmitted.add(Date.now(), deliveryTags);
+                                }
+                            }
+                            break;
                         }
+                        case 'batch_quizzes_finished':
+                            wsEvents.quizFinished.add(1, tags);
+                            deliveryTs.quizFinished.add(Date.now(), deliveryTags);
+                            break;
+                        case 'batch_quizzes_disclosed':
+                            wsEvents.quizDisclosed.add(1, tags);
+                            deliveryTs.quizDisclosed.add(Date.now(), deliveryTags);
+                            break;
+                        case 'batch_quizzes_closed':
+                            wsEvents.quizClosed.add(1, tags);
+                            deliveryTs.quizClosed.add(Date.now(), deliveryTags);
+                            break;
+                        case 'student_points_updated':
+                            wsEvents.studentPoints.add(1, tags);
+                            break;
+                        case 'end_lesson':
+                            wsEvents.endLesson.add(1, tags);
+                            deliveryTs.lessonEnd.add(Date.now(), deliveryTags);
+                            endLessonReceived = true;
+                            socket.close();
+                            break;
                     }
                     break;
             }
@@ -339,12 +421,15 @@ export function stressScenario(data: SetupData): void {
 
         socket.on('error', () => {
             stressErrors.add(1);
+            wsConnection.error.add(1, tags);
         });
 
-        // 短暫停留後斷開
+        // 撐滿整段測試時長：每個 VU 對應一個固定座位，
+        // 不能讓 iteration 結束後重啟新 iteration（會用同 serial 撞 409）。
+        // ramp-down 時 k6 會以 gracefulRampDown 自然關閉多餘 VU。
         socket.setTimeout(() => {
             socket.close();
-        }, 30000);  // 30 秒後斷開 (延長以接收更多事件)
+        }, calculateTotalDurationMs());
     });
 
     // 記錄未連線的情況
