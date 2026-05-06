@@ -197,7 +197,7 @@ source .env.local && pnpm test:load-test:influxdb
 
 | 變數                | 必填 | 預設值                | 說明                       |
 | ------------------- | ---- | --------------------- | -------------------------- |
-| `MAX_VUS`           | -    | 200                   | 最大虛擬用戶數（學生）     |
+| `MAX_VUS`           | -    | 50                    | 最大虛擬用戶數（學生），預設對齊 `STUDENTS_PER_ROOM` |
 | `STAGES`            | -    | 5                     | 階段數量                   |
 | `STAGE_DURATION`    | -    | 60s                   | 每階段持續時間             |
 | `TEACHER_TOKEN`     | ✅   | -                     | 老師 JWT Token             |

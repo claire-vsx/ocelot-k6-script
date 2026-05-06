@@ -29,12 +29,15 @@ export function getHeaders(token?: string): Record<string, string> {
 
 // === Room API ===
 
-export function createRoom(roomIndex: number): string | null {
+export function createRoom(
+  roomIndex: number,
+  studentCount?: number
+): string | null {
   const displayName = `k6_${Date.now()}_${roomIndex + 1}`;
   const payload = {
     org_id: CONFIG.ORG_ID,
     teacher_id: CONFIG.TEACHER_ID,
-    student_count: STUDENTS_PER_ROOM,
+    student_count: studentCount ?? STUDENTS_PER_ROOM,
     display_name: displayName,
     icon: 1,
   };
@@ -57,7 +60,9 @@ export function createRoom(roomIndex: number): string | null {
     console.log(`Room ${roomIndex + 1} created: ${roomId}`);
     return roomId || null;
   }
-  console.error(`Failed to create room ${roomIndex + 1}: ${res.status}`);
+  console.error(
+    `Failed to create room ${roomIndex + 1}: status=${res.status} body=${res.body}`
+  );
   recordHttpError(res.status, "create_room");
   return null;
 }
@@ -198,7 +203,10 @@ export function chooseSeat(
     const data = res.json() as { student_id: string; socket_token: string };
     return { studentId: data.student_id, token: data.socket_token };
   }
-  if (roomId) console.error(`[Room ${roomId}] Seat failed: ${res.status}`);
+  if (roomId)
+    console.error(
+      `[Room ${roomId}] Seat failed (serial=${serialNumber}): status=${res.status} body=${res.body}`
+    );
   recordHttpError(res.status, "choose_seat");
   return null;
 }

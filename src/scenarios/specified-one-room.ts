@@ -4,7 +4,10 @@
  * 針對指定的現有教室進行測試，使用雙場景架構：學生場景 + 教師場景
  *
  * Usage:
- *   pnpm build && k6 run dist/specified-one-room.js -e ROOM_ID=xxx
+ *   source .env.local && pnpm test:specified-one-room
+ *   source .env.local && pnpm test:specified-one-room:influxdb
+ *
+ *   需在 .env.local 設定 ROOM_ID（或 ROOM_ID=xxx 直接 inline）
  */
 
 import { sleep, group } from 'k6';

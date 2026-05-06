@@ -4,7 +4,8 @@
  * 模擬多間教室同時進行課程，每間教室有 1 位老師和 N 位學生
  *
  * Usage:
- *   npm run build && k6 run dist/multi-room.js
+ *   source .env.local && pnpm test:multi-room
+ *   source .env.local && pnpm test:multi-room:influxdb
  */
 
 import { sleep, group } from "k6";
