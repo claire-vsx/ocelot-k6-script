@@ -1279,11 +1279,11 @@ pnpm build:watch</div>
       <div class="step-card reveal">
         <div class="step-num">04</div>
         <h3 class="sub">執行測試</h3>
-        <p style="font-size:var(--small-size);color:var(--ink-muted);line-height:1.45;">載入 env 後 k6 run</p>
-        <div class="code">source .env.local
-pnpm test:multi-room
-<span class="com"># 或</span>
-k6 run dist/multi-room.js</div>
+        <p style="font-size:var(--small-size);color:var(--ink-muted);line-height:1.45;">載入 env 後執行，輸出到 InfluxDB</p>
+        <div class="code">source .env.dev
+pnpm test:multi-room:influxdb
+<span class="com"># 不輸出指標的基本版</span>
+pnpm test:multi-room</div>
       </div>
     </div>
 
